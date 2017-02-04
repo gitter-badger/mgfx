@@ -7,10 +7,83 @@
 #include <GL/gl3w.h>    // This example is using gl3w to access OpenGL functions (because it is small). You may use glew/glad/glLoadGen/etc. whatever already works for you.
 #include <SDL.h>
 
+static GLuint
+compile_shader(GLenum type, const GLchar *source)
+{
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &source, NULL);
+    glCompileShader(shader);
+    GLint param;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &param);
+    if (!param) {
+        GLchar log[4096];
+        glGetShaderInfoLog(shader, sizeof(log), NULL, log);
+        fprintf(stderr, "error: %s: %s\n",
+            type == GL_FRAGMENT_SHADER ? "frag" : "vert", (char *)log);
+        exit(EXIT_FAILURE);
+    }
+    return shader;
+}
+
+static GLuint
+link_program(GLuint vert, GLuint frag)
+{
+    GLuint program = glCreateProgram();
+    glAttachShader(program, vert);
+    glAttachShader(program, frag);
+    glLinkProgram(program);
+    GLint param;
+    glGetProgramiv(program, GL_LINK_STATUS, &param);
+    if (!param) {
+        GLchar log[4096];
+        glGetProgramInfoLog(program, sizeof(log), NULL, log);
+        fprintf(stderr, "error: link: %s\n", (char *)log);
+        exit(EXIT_FAILURE);
+    }
+    return program;
+}
+
+const float SQUARE[] = {
+    -1.0f,  1.0f,
+    -1.0f, -1.0f,
+     1.0f,  1.0f,
+     1.0f, -1.0f
+};
+const int ATTRIB_POINT = 0;
+struct graphics_context {
+    GLuint program;
+    GLint uniform_angle;
+    GLuint vbo_point;
+    GLuint vao_point;
+    double angle = 0.0;
+};
+#define countof(x) (sizeof(x) / sizeof(0[x]))
+
+static void
+render(struct graphics_context *context)
+{
+    glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glViewport(0, 0, (int)100, (int)100);
+    glUseProgram(context->program);
+    glUniform1f(context->uniform_angle, (float)context->angle);
+    glBindVertexArray(context->vao_point);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, countof(SQUARE) / 2);
+    glBindVertexArray(0);
+    glUseProgram(0);
+
+    /* Physics */
+    context->angle += 1.0;
+    if (context->angle > 2 * M_PI)
+        context->angle -= 2 * M_PI;
+
+}
+
 int main(int, char**)
 {
     // Setup SDL
-    if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER) != 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
     {
         printf("Error: %s\n", SDL_GetError());
         return -1;
@@ -26,10 +99,50 @@ int main(int, char**)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    SDL_Window *window = SDL_CreateWindow("GLShell", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE);
+    SDL_Window *window = SDL_CreateWindow("GLShell", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     SDL_GLContext glcontext = SDL_GL_CreateContext(window);
     gl3wInit();
 
+    /* Shader sources */
+    const GLchar *vert_shader =
+        "#version 330\n"
+        "layout(location = 0) in vec2 point;\n"
+        "uniform float angle;\n"
+        "void main() {\n"
+        "    mat2 rotate = mat2(cos(angle), -sin(angle),\n"
+        "                       sin(angle), cos(angle));\n"
+        "    gl_Position = vec4(0.75 * rotate * point, 0.0, 1.0);\n"
+        "}\n";
+    const GLchar *frag_shader =
+        "#version 330\n"
+        "out vec4 color;\n"
+        "void main() {\n"
+        "    color = vec4(1, 0.15, 0.15, 0);\n"
+        "}\n";
+
+    /* Compile and link OpenGL program */
+    GLuint vert = compile_shader(GL_VERTEX_SHADER, vert_shader);
+    GLuint frag = compile_shader(GL_FRAGMENT_SHADER, frag_shader);
+    graphics_context context;
+    context.program = link_program(vert, frag);
+    context.uniform_angle = glGetUniformLocation(context.program, "angle");
+    glDeleteShader(frag);
+    glDeleteShader(vert);
+
+    /* Prepare vertex buffer object (VBO) */
+    glGenBuffers(1, &context.vbo_point);
+    glBindBuffer(GL_ARRAY_BUFFER, context.vbo_point);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(SQUARE), SQUARE, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    /* Prepare vertrex array object (VAO) */
+    glGenVertexArrays(1, &context.vao_point);
+    glBindVertexArray(context.vao_point);
+    glBindBuffer(GL_ARRAY_BUFFER, context.vbo_point);
+    glVertexAttribPointer(ATTRIB_POINT, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(ATTRIB_POINT);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
     // Setup ImGui binding
     ImGui_ImplSdlGL3_Init(window);
 
@@ -58,6 +171,8 @@ int main(int, char**)
             if (event.type == SDL_QUIT)
                 done = true;
         }
+        render(&context);
+
         ImGui_ImplSdlGL3_NewFrame(window);
 
         // 1. Show a simple window
@@ -75,7 +190,7 @@ int main(int, char**)
         // 2. Show another simple window, this time using an explicit Begin/End pair
         if (show_another_window)
         {
-            ImGui::SetNextWindowSize(ImVec2(200,100), ImGuiSetCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
             ImGui::Begin("Another Window", &show_another_window);
             ImGui::Text("Hello");
             ImGui::End();
@@ -89,13 +204,15 @@ int main(int, char**)
         }
 
         // Rendering
+//        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+ //       glClear(GL_COLOR_BUFFER_BIT);
         glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
         ImGui::Render();
         SDL_GL_SwapWindow(window);
     }
-
+    glDeleteVertexArrays(1, &context.vao_point);
+    glDeleteBuffers(1, &context.vbo_point);
+    glDeleteProgram(context.program);
     // Cleanup
     ImGui_ImplSdlGL3_Shutdown();
     SDL_GL_DeleteContext(glcontext);
