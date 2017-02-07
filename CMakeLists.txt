@@ -7,23 +7,35 @@ SET (CMAKE_MODULE_PATH
 
 INCLUDE(copy_files)
 
-# Sources
-SET(SOURCES
-    main.cpp
-    )
+FILE(GLOB GL_COMMON "GL/common/*.cpp" "GL/common/*.hpp")
 
-SET(LIBRARY_SOURCES
+SET(IMGUI_SOURCES
     imgui/imgui_impl_sdl_gl3.cpp
     imgui/imgui.cpp
     imgui/imgui_draw.cpp
     imgui/imgui_demo.cpp
     imgui/imgui_orient.cpp
+)
+
+SET(GL_SOURCES
     GL/gl3w.c
 )
+
+# Sources
+SET(SOURCES
+    ${GL_COMMON}
+    ${IMGUI_SOURCES}
+    ${GL_SOURCES}
+    main.cpp
+    common.h
+    )
 
 INCLUDE_DIRECTORIES(imgui
     sdl
     sdl/include
+    glm
+    GL/common
+    GL
     .
     ) 
 
@@ -39,5 +51,6 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME}
 
 copy_files(sdl/x86/*.dll ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
 
-SOURCE_GROUP ("GLShell" FILES ${SOURCES})
-SOURCE_GROUP ("Lib" FILES ${LIBRARY_SOURCES})
+SOURCE_GROUP ("Shell" FILES ${SOURCES})
+SOURCE_GROUP ("ImGui" FILES ${IMGUI_SOURCES})
+SOURCE_GROUP ("GL" FILES ${GL_SOURCES} ${GL_COMMON})
