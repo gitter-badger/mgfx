@@ -206,7 +206,7 @@ public:
 
     void UpdatePosition(int64_t timeDelta)
     {
-        const float settlingTimeMs = 50;
+        const float settlingTimeMs = 10;
         float frac = std::min(timeDelta / settlingTimeMs, 1.0f);
         frac = SmoothStep(frac);
         glm::vec3 distance = frac * positionDelta;
@@ -217,7 +217,7 @@ public:
 
     void UpdateOrbit(int64_t timeDelta)
     {
-        const float settlingTimeMs = 50;
+        const float settlingTimeMs = 10;
         float frac = std::min(timeDelta / settlingTimeMs, 1.0f);
         frac = SmoothStep(frac);
 
