@@ -7,18 +7,30 @@ SET (CMAKE_MODULE_PATH
 
 INCLUDE(copy_files)
 
-FILE(GLOB GL_COMMON "GL/common/*.cpp" "GL/common/*.hpp")
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set(ARCH_64 TRUE)
+  set(PROCESSOR_ARCH "x64")
+else()
+  set(ARCH_64 FALSE)
+  set(PROCESSOR_ARCH "x86")
+endif()
+
+FILE(GLOB GL_COMMON "graphics3d/GL/*.cpp" "graphics3d/GL/*.hpp")
 
 SET(IMGUI_SOURCES
-    imgui/imgui_impl_sdl_gl3.cpp
-    imgui/imgui.cpp
-    imgui/imgui_draw.cpp
-    imgui/imgui_demo.cpp
-    imgui/imgui_orient.cpp
+    graphics2d/imgui/imgui_impl_sdl_gl3.cpp
+    graphics2d/imgui/imgui.cpp
+    graphics2d/imgui/imgui_draw.cpp
+    graphics2d/imgui/imgui_demo.cpp
+    graphics2d/imgui/imgui_orient.cpp
 )
 
 SET(GL_SOURCES
-    GL/gl3w.c
+    graphics3d/GL/gl3w.c
+    graphics3d/GL/glrender.cpp
+    graphics3d/GL/glrender.h
+    graphics3d/camera.h
+    graphics3d/manipulator.h
 )
 
 # Sources
@@ -34,23 +46,28 @@ INCLUDE_DIRECTORIES(imgui
     sdl
     sdl/include
     glm
-    GL/common
-    GL
+    graphics3d/GL
+    graphics3d
+    graphics2d
     .
     ) 
 
 # Create the library
 ADD_EXECUTABLE (${PROJECT_NAME} WIN32 ${SOURCES} ${LIBRARY_SOURCES})
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/sdl/lib/x86/SDL2.lib
-    ${CMAKE_CURRENT_SOURCE_DIR}/sdl/lib/x86/SDL2main.lib
-    opengl32.lib
+TARGET_LINK_LIBRARIES (${PROJECT_NAME}
+
+${CMAKE_CURRENT_SOURCE_DIR}/sdl/lib/${PROCESSOR_ARCH}/SDL2.lib
+${CMAKE_CURRENT_SOURCE_DIR}/sdl/lib/${PROCESSOR_ARCH}/SDL2main.lib
+opengl32.lib
 
 )
 
-copy_files(sdl/x86/*.dll ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
+copy_files(sdl/${PROCESSOR_ARCH}/*.dll ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
+copy_files(graphics3d/models/*.* ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
+copy_files(graphics3d/textures/*.* ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
+copy_files(graphics3d/GL/shaders/*.* ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
 
 SOURCE_GROUP ("Shell" FILES ${SOURCES})
 SOURCE_GROUP ("ImGui" FILES ${IMGUI_SOURCES})
-SOURCE_GROUP ("GL" FILES ${GL_SOURCES} ${GL_COMMON})
+SOURCE_GROUP ("3D" FILES ${GL_SOURCES} ${GL_COMMON})

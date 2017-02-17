@@ -1,6 +1,11 @@
 // ImGui - standalone example application for SDL2 + OpenGL
 // If you are new to ImGui, see examples/README.txt and documentation at the top of imgui.cpp.
 #include "common.h"
+#include "GLRender.h"
+#include "camera.h"
+#include "manipulator.h"
+
+#include <memory>
 
 int main(int, char**)
 {
@@ -28,22 +33,21 @@ int main(int, char**)
     // Setup ImGui binding
     ImGui_ImplSdlGL3_Init(window);
 
-    // Load Fonts
-    // (there is a default font, this is only if you want to change it. see extra_fonts/README.txt for more details)
-    //ImGuiIO& io = ImGui::GetIO();
-    //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("../../extra_fonts/Cousine-Regular.ttf", 15.0f);
-    //io.Fonts->AddFontFromFileTTF("../../extra_fonts/DroidSans.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../extra_fonts/ProggyClean.ttf", 13.0f);
-    //io.Fonts->AddFontFromFileTTF("../../extra_fonts/ProggyTiny.ttf", 10.0f);
-    //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-
     bool show_test_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImColor(114, 144, 154);
 
-//    GLRender render;
-//    render.Init();
+    auto pCamera = std::make_shared<Camera>();
+    auto pManipulator = std::make_shared<Manipulator>(pCamera);
+
+    pCamera->SetFilmSize(1024, 768);
+    pCamera->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, -10.0f), glm::vec3(0.0f));
+
+    GLRender render3D;
+    if (!render3D.Init())
+    {
+        return -1;
+    }
 
     // Main loop
     bool done = false;
@@ -56,7 +60,8 @@ int main(int, char**)
             if (event.type == SDL_QUIT)
                 done = true;
         }
-//        render.Render();
+
+        render3D.Render(pCamera.get());
 
         ImGui_ImplSdlGL3_NewFrame(window);
 
@@ -90,13 +95,13 @@ int main(int, char**)
 
         // Rendering
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-       glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
         glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
         ImGui::Render();
         SDL_GL_SwapWindow(window);
     }
 
-//    render.CleanUp();
+    render3D.Cleanup();
 
     // Cleanup
     ImGui_ImplSdlGL3_Shutdown();
