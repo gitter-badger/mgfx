@@ -5,7 +5,7 @@
 #include <memory>
 #include <glm/glm.hpp>
 
-#include "Camera.h"
+#include <camera/camera.h>
 
 class GLRender
 {

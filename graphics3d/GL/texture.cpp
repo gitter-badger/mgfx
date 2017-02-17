@@ -4,8 +4,6 @@
 
 #include <GL/gl3w.h>
 
-#include <gl3w.h>
-
 #define GL_COMPRESSED_RGB_S3TC_DXT1_EXT 0x83F0
 #define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT 0x83F1
 #define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT 0x83F2

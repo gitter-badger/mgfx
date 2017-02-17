@@ -1,8 +1,8 @@
 #include "glrender.h"
 #include "GL/gl3w.h"
-#include "GL/objloader.hpp"
-#include "GL/shader.hpp"
-#include "GL/texture.hpp"
+#include "GL/shader.h"
+#include "GL/texture.h"
+#include "geometry/objloader.h"
 
 #include "SDL.h"
 #include <filesystem>

@@ -13,7 +13,7 @@ ImVector<ImVec3> ImOrient::s_ArrowTri[4];
 ImVector<ImVec2>   ImOrient::s_ArrowTriProj[4];
 ImVector<ImVec3> ImOrient::s_ArrowNorm[4];
 ImVector<ImU32> ImOrient::s_ArrowColLight[4];
-
+ 
 namespace ImGui
 {
 IMGUI_API bool QuaternionGizmo(const char* label, ImQuat& quat)

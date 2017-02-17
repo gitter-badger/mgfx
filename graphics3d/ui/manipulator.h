@@ -1,6 +1,6 @@
 #pragma once
 #include <memory>
-#include "camera.h"
+#include "camera/camera.h"
 
 class Manipulator
 {

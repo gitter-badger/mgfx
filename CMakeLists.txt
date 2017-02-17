@@ -15,8 +15,6 @@ else()
   set(PROCESSOR_ARCH "x86")
 endif()
 
-FILE(GLOB GL_COMMON "graphics3d/GL/*.cpp" "graphics3d/GL/*.hpp")
-
 SET(IMGUI_SOURCES
     graphics2d/imgui/imgui.cpp
     graphics2d/imgui/imgui_draw.cpp
@@ -26,6 +24,11 @@ SET(IMGUI_SOURCES
 
 SET(GRAPHICS3D_GL_SOURCES
     graphics3d/GL/gl3w.c
+    graphics3d/GL/glcorearb.h
+    graphics3d/GL/texture.cpp
+    graphics3d/GL/texture.h
+    graphics3d/GL/shader.cpp
+    graphics3d/GL/shader.h
     graphics2d/GL/imgui_impl_sdl_gl3.cpp
     graphics2d/GL/imgui_impl_sdl_gl3.h
 )
@@ -48,12 +51,17 @@ SET(GRAPHICS3D_UI_SOURCES
 )
 
 SET(HOST_SOURCES
-    main.cpp
+    host/main.cpp
+)
+
+SET(APP_SOURCES
+    glrender.cpp
+    glrender.h
+    common.h
 )
 
 # Sources
 SET(SOURCES
-    ${GL_COMMON}
     ${IMGUI_SOURCES}
     ${GRAPHICS3D_CAMERA_SOURCES}
     ${GRAPHICS3D_GEOMETRY_SOURCES}
@@ -69,6 +77,7 @@ INCLUDE_DIRECTORIES(imgui
     lib/sdl
     lib/sdl/include
     lib/glm
+    lib
     graphics3d
     graphics2d
     graphics2d/imgui
@@ -87,11 +96,13 @@ opengl32.lib
 copy_files(lib/sdl/${PROCESSOR_ARCH}/*.dll ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
 copy_files(assets/models/*.* ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
 copy_files(assets/textures/*.* ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
-copy_files(assets/GL/shaders/*.* ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
+copy_files(assets/shaders/GL/*.* ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
 
-SOURCE_GROUP ("2D/ImGui" FILES ${IMGUI_SOURCES})
-SOURCE_GROUP ("3D/Geometry" FILES ${GRAPHICS3D_GEOMETRY_SOURCES})
-SOURCE_GROUP ("3D/Camera" FILES ${GRAPHICS3D_CAMERA_SOURCES})
-SOURCE_GROUP ("3D/UI" FILES ${GRAPHICS3D_UI_SOURCES})
-SOURCE_GROUP ("3D/GL" FILES ${GRAPHICS3D_UI_SOURCES})
-SOURCE_GROUP ("Host" FILES ${HOST_SOURCES})
+SOURCE_GROUP(2D)
+SOURCE_GROUP(3D)
+SOURCE_GROUP (2D\\ImGui FILES ${IMGUI_SOURCES})
+SOURCE_GROUP (3D\\Geometry FILES ${GRAPHICS3D_GEOMETRY_SOURCES})
+SOURCE_GROUP (3D\\Camera FILES ${GRAPHICS3D_CAMERA_SOURCES})
+SOURCE_GROUP (3D\\UI FILES ${GRAPHICS3D_UI_SOURCES})
+SOURCE_GROUP (3D\\GL FILES ${GRAPHICS3D_GL_SOURCES})
+SOURCE_GROUP (Host FILES ${HOST_SOURCES})

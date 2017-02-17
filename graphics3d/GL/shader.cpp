@@ -11,7 +11,7 @@ using namespace std;
 
 #include <GL/gl3w.h>
 
-#include "shader.hpp"
+#include <GL/shader.h>
 
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path){
 

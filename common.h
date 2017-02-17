@@ -11,7 +11,7 @@
 
 #include <vector>
 
-#include <shader.hpp>
-#include <texture.hpp>
-#include <objloader.hpp>
-#include <vboindexer.hpp>
+#include <GL/shader.h>
+#include <GL/texture.h>
+#include <geometry/objloader.h>
+#include <geometry/indexer.h>
