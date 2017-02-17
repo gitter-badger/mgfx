@@ -18,7 +18,6 @@ endif()
 FILE(GLOB GL_COMMON "graphics3d/GL/*.cpp" "graphics3d/GL/*.hpp")
 
 SET(IMGUI_SOURCES
-    graphics2d/imgui/imgui_impl_sdl_gl3.cpp
     graphics2d/imgui/imgui.cpp
     graphics2d/imgui/imgui_draw.cpp
     graphics2d/imgui/imgui_demo.cpp
@@ -27,8 +26,8 @@ SET(IMGUI_SOURCES
 
 SET(GL_SOURCES
     graphics3d/GL/gl3w.c
-    graphics3d/GL/glrender.cpp
-    graphics3d/GL/glrender.h
+    graphics2d/GL/imgui_impl_sdl_gl3.cpp
+    graphics2d/GL/imgui_impl_sdl_gl3.h
     graphics3d/camera.h
     graphics3d/manipulator.h
 )
@@ -38,6 +37,8 @@ SET(SOURCES
     ${GL_COMMON}
     ${IMGUI_SOURCES}
     ${GL_SOURCES}
+    glrender.cpp
+    glrender.h
     main.cpp
     common.h
     )
@@ -49,6 +50,7 @@ INCLUDE_DIRECTORIES(imgui
     graphics3d/GL
     graphics3d
     graphics2d
+    graphics2d/imgui
     .
     ) 
 

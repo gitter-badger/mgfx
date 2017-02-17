@@ -33,15 +33,18 @@ int main(int, char**)
     // Setup ImGui binding
     ImGui_ImplSdlGL3_Init(window);
 
-    bool show_test_window = true;
+    bool show_test_window = false;
     bool show_another_window = false;
     ImVec4 clear_color = ImColor(114, 144, 154);
 
     auto pCamera = std::make_shared<Camera>();
     auto pManipulator = std::make_shared<Manipulator>(pCamera);
 
-    pCamera->SetFilmSize(1024, 768);
-    pCamera->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, -10.0f), glm::vec3(0.0f));
+    int x, y;
+    SDL_GetWindowSize(window, &x, &y);
+    pCamera->SetFilmSize(glm::uvec2(x, y));
+
+    pCamera->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
 
     GLRender render3D;
     if (!render3D.Init())
@@ -58,8 +61,52 @@ int main(int, char**)
         {
             ImGui_ImplSdlGL3_ProcessEvent(&event);
             if (event.type == SDL_QUIT)
+            {
                 done = true;
+            }
+
+            if (!ImGui::GetIO().WantCaptureMouse)
+            {
+                if (event.type == SDL_MOUSEBUTTONDOWN)
+                {
+                    /* If the left button was pressed. */
+                    if (event.button.button == SDL_BUTTON_LEFT)
+                    {
+                        int x, y;
+                        SDL_GetMouseState(&x, &y);
+                        pManipulator->MouseDown(glm::vec2(x, y));
+                    }
+                }
+                else if (event.type == SDL_MOUSEBUTTONUP)
+                {
+                    /* If the left button was pressed. */
+                    if (event.button.button == SDL_BUTTON_LEFT)
+                    {
+                        int x, y;
+                        SDL_GetMouseState(&x, &y);
+                        pManipulator->MouseUp(glm::vec2(x, y));
+                    }
+                }
+                else if (event.type == SDL_MOUSEMOTION)
+                {
+                    int x, y;
+                    SDL_GetMouseState(&x, &y);
+                    pManipulator->MouseMove(glm::vec2(x, y));
+                }
+            }
+            if (event.type == SDL_WINDOWEVENT)
+            {
+                if (event.window.event == SDL_WINDOWEVENT_RESIZED)
+                {
+                    pCamera->SetFilmSize(glm::uvec2(event.window.data1, event.window.data2));
+                }
+            }
         }
+
+        pCamera->PreRender();
+
+        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         render3D.Render(pCamera.get());
 
@@ -68,9 +115,12 @@ int main(int, char**)
         // 1. Show a simple window
         // Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
         {
-            static float f = 0.0f;
+            static float f = pCamera->GetFieldOfView();
             ImGui::Text("Hello, world!");
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+            if (ImGui::SliderFloat("Field Of View", &f, 20.0f, 90.0f))
+            {
+                pCamera->SetFieldOfView(f);
+            }
             ImGui::ColorEdit3("clear color", (float*)&clear_color);
             if (ImGui::Button("Test Window")) show_test_window ^= 1;
             if (ImGui::Button("Another Window")) show_another_window ^= 1;
@@ -94,8 +144,6 @@ int main(int, char**)
         }
 
         // Rendering
-        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
         glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
         ImGui::Render();
         SDL_GL_SwapWindow(window);

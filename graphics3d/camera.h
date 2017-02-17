@@ -47,8 +47,8 @@ private:
     glm::vec3 position = glm::vec3(0.0f);                          // Position of the camera in world space
     glm::vec3 focalPoint = glm::vec3(0.0f);                        // Look at point
 
-    float filmWidth = 1.0f;                                         // Width/height of the film
-    float filmHeight = 1.0f;
+    // Size of the camera film
+    glm::uvec2 filmSize;
 
     glm::vec3 viewDirection = glm::vec3(0.0f, 0.0f, 1.0f);         // The direction the camera is looking in
     glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);                 // The vector to the right
@@ -98,12 +98,25 @@ public:
         UpdateRightUp();
     }
 
-    void SetFilmSize(float width, float height)
+    void SetFilmSize(const glm::uvec2& size)
     {
-        filmWidth = width;
-        filmHeight = height;
-        aspectRatio = width / height;
+        filmSize = size;
+        aspectRatio = size.x / float(size.y);
+    }
 
+    glm::uvec2 GetFilmSize() const
+    {
+        return filmSize;
+    }
+
+    void SetFieldOfView(float fov)
+    {
+        fieldOfView = fov;
+    }
+
+    float GetFieldOfView() const
+    {
+        return fieldOfView;
     }
 
     bool PreRender()
@@ -156,8 +169,8 @@ public:
         auto lensRand = glm::circularRand(0.34f);
 
         auto dir = viewDirection;
-        float x = ((imageSample.x * 2.0f) / filmWidth) - 1.0f;
-        float y = ((imageSample.y * 2.0f) / filmHeight) - 1.0f;
+        float x = ((imageSample.x * 2.0f) / filmSize.x) - 1.0f;
+        float y = ((imageSample.y * 2.0f) / filmSize.y) - 1.0f;
 
         // Take the view direction and adjust it to point at the given sample, based on the 
         // the frustum 
@@ -244,7 +257,7 @@ public:
     glm::mat4 GetProjection() const
     {
         // TODO; ZClip
-        return glm::perspectiveFov(fieldOfView, filmWidth, filmHeight, .01f, 1000.0f);
+        return glm::perspectiveFov(glm::radians(fieldOfView), float(filmSize.x), float(filmSize.y), .01f, 1000.0f);
     }
 
 private:

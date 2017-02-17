@@ -4,9 +4,20 @@
 #include "GL/shader.hpp"
 #include "GL/texture.hpp"
 
+#include "SDL.h"
+#include <filesystem>
+
+namespace fs = std::experimental::filesystem::v1;
+
 GLRender::GLRender()
 {
 
+}
+
+std::string GetMediaPath(const char* pszMediaName)
+{
+    fs::path basePath(SDL_GetBasePath());
+    return (basePath / pszMediaName).generic_string();
 }
 
 bool GLRender::Init()
@@ -23,8 +34,9 @@ bool GLRender::Init()
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
 
+
     // Create and compile our GLSL program from the shaders
-    programID = LoadShaders("StandardShading.vertexshader", "StandardShading.fragmentshader");
+    programID = LoadShaders(GetMediaPath("StandardShading.vertexshader").c_str(), GetMediaPath("StandardShading.fragmentshader").c_str());
 
     // Get a handle for our "MVP" uniform
     MatrixID = glGetUniformLocation(programID, "MVP");
@@ -32,7 +44,7 @@ bool GLRender::Init()
     ModelMatrixID = glGetUniformLocation(programID, "M");
 
     // Load the texture
-    Texture = loadDDS("uvmap.DDS");
+    Texture = loadDDS(GetMediaPath("uvmap.DDS").c_str());
     if (!Texture)
     {
         Cleanup();
@@ -46,7 +58,7 @@ bool GLRender::Init()
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec2> uvs;
     std::vector<glm::vec3> normals;
-    bool res = loadOBJ("suzanne.obj", vertices, uvs, normals);
+    bool res = loadOBJ(GetMediaPath("suzanne.obj").c_str(), vertices, uvs, normals);
     if (!res)
     {
         Cleanup();
@@ -78,6 +90,8 @@ bool GLRender::Render(Camera* pCamera)
 {
     // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glViewport(0, 0, pCamera->GetFilmSize().x, pCamera->GetFilmSize().y);
 
     // Use our shader
     glUseProgram(programID);
