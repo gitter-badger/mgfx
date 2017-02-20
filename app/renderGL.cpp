@@ -1,15 +1,16 @@
-#include "glrender.h"
-#include "GL/gl3w.h"
-#include "GL/shader.h"
-#include "GL/texture.h"
+#include "common.h"
+#include "graphics3d/device/GL/deviceGL.h"
 #include "geometry/objloader.h"
+#include "camera/camera.h"
+#include "scene/scene.h"
 
 #include "SDL.h"
 #include <filesystem>
 
+
 namespace fs = std::experimental::filesystem::v1;
 
-GLRender::GLRender()
+DeviceGL::DeviceGL()
 {
 
 }
@@ -20,8 +21,27 @@ std::string GetMediaPath(const char* pszMediaName)
     return (basePath / pszMediaName).generic_string();
 }
 
-bool GLRender::Init()
+bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
 {
+    m_spScene = pScene;
+
+    // Setup window
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_DisplayMode current;
+    SDL_GetCurrentDisplayMode(0, &current);
+    pWindow = SDL_CreateWindow("GLShell", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    glContext = SDL_GL_CreateContext(pWindow);
+
+    gl3wInit();
+
+    SDL_GL_SetSwapInterval(0);
+
     // Enable depth test
     glEnable(GL_DEPTH_TEST);
 
@@ -83,15 +103,46 @@ bool GLRender::Init()
     glUseProgram(programID);
     LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
+    // Setup ImGui binding
+    ImGui_ImplSdlGL3_Init(pWindow);
+
+
     return true;
 }
 
-bool GLRender::Render(Camera* pCamera)
+bool DeviceGL::PreRender()
 {
+    int x, y;
+    SDL_GetWindowSize(pWindow, &x, &y);
+
+    auto pCamera = m_spScene->GetCurrentCamera();
+    if (pCamera)
+    {
+        pCamera->SetFilmSize(glm::uvec2(x, y));
+        pCamera->PreRender();
+    }
+
+    return true;
+}
+
+bool DeviceGL::Render()
+{
+    if (!m_spScene)
+    {
+        return true;
+    }
+
+    auto clear_color = m_spScene->GetClearColor();
+    glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+
     // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glViewport(0, 0, pCamera->GetFilmSize().x, pCamera->GetFilmSize().y);
+    auto& pCamera = m_spScene->GetCurrentCamera();
+    if (pCamera)
+    {
+        glViewport(0, 0, pCamera->GetFilmSize().x, pCamera->GetFilmSize().y);
+    }
 
     // Use our shader
     glUseProgram(programID);
@@ -162,8 +213,10 @@ bool GLRender::Render(Camera* pCamera)
     return true;
 }
 
-void GLRender::Cleanup()
+void DeviceGL::Cleanup()
 {
+    ImGui_ImplSdlGL3_Shutdown();
+
     glDeleteBuffers(1, &normalbuffer);
     glDeleteBuffers(1, &uvbuffer);
     glDeleteBuffers(1, &vertexbuffer);
@@ -173,4 +226,25 @@ void GLRender::Cleanup()
     glDeleteVertexArrays(1, &VertexArrayID);
 
     glDeleteProgram(programID);
+    
+    // Cleanup
+    SDL_GL_DeleteContext(glContext);
+    SDL_DestroyWindow(pWindow);
+}
+
+void DeviceGL::Prepare2D()
+{
+    ImGui_ImplSdlGL3_NewFrame(pWindow);
+    
+    glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
+}
+
+void DeviceGL::ProcessEvent(SDL_Event& event)
+{
+    ImGui_ImplSdlGL3_ProcessEvent(&event);
+}
+
+void DeviceGL::Swap()
+{
+    SDL_GL_SwapWindow(pWindow);
 }

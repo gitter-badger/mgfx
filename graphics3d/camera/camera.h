@@ -1,38 +1,5 @@
 #pragma once
 
-#include "glm/glm/gtx/rotate_vector.hpp"
-#include "glm/glm/gtc/quaternion.hpp"
-#include "glm/glm/gtc/random.hpp"
-
-#include <string>
-#include <chrono>
-#include <algorithm>
-
-/** Build a unit quaternion representing the rotation
- * from u to v. The input vectors need not be normalised. */
-static glm::quat QuatFromVectors(glm::vec3 u, glm::vec3 v)
-{
-    float norm_u_norm_v = sqrt(dot(u, u) * dot(v, v));
-    float real_part = norm_u_norm_v + dot(u, v);
-    glm::vec3 w;
-
-    if (real_part < 1.e-6f * norm_u_norm_v)
-    {
-        /* If u and v are exactly opposite, rotate 180 degrees
-         * around an arbitrary orthogonal axis. Axis normalisation
-         * can happen later, when we normalise the quaternion. */
-        real_part = 0.0f;
-        w = abs(u.x) > abs(u.z) ? glm::vec3(-u.y, u.x, 0.f)
-            : glm::vec3(0.f, -u.z, u.y);
-    }
-    else
-    {
-        /* Otherwise, build quaternion the standard way. */
-        w = cross(u, v);
-    }
-
-    return glm::normalize(glm::quat(real_part, w.x, w.y, w.z));
-}
 
 struct Ray
 {
@@ -206,7 +173,7 @@ public:
 
     void UpdatePosition(int64_t timeDelta)
     {
-        const float settlingTimeMs = 10;
+        const float settlingTimeMs = 50;
         float frac = std::min(timeDelta / settlingTimeMs, 1.0f);
         frac = SmoothStep(frac);
         glm::vec3 distance = frac * positionDelta;
@@ -217,7 +184,7 @@ public:
 
     void UpdateOrbit(int64_t timeDelta)
     {
-        const float settlingTimeMs = 10;
+        const float settlingTimeMs = 50;
         float frac = std::min(timeDelta / settlingTimeMs, 1.0f);
         frac = SmoothStep(frac);
 

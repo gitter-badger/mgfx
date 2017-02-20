@@ -15,22 +15,33 @@ else()
   set(PROCESSOR_ARCH "x86")
 endif()
 
+SET(APP_SOURCES
+    app/renderUI.cpp
+    app/renderUI.h
+)
+
+SET(GRAPHICS3D_DEVICE_SOURCES
+    graphics3d/device/IDevice.h 
+)
+
+SET(GRAPHICS3D_DEVICEGL_SOURCES
+    graphics3d/device/GL/deviceGL.cpp
+    graphics3d/device/GL/deviceGL.h
+    graphics3d/device/GL/gl3w.c
+    graphics3d/device/GL/glcorearb.h
+    graphics3d/device/GL/texture.cpp
+    graphics3d/device/GL/texture.h
+    graphics3d/device/GL/shader.cpp
+    graphics3d/device/GL/shader.h
+    graphics3d/device/GL/imgui_impl_sdl_gl3.cpp
+    graphics3d/device/GL/imgui_impl_sdl_gl3.h
+)
+
 SET(IMGUI_SOURCES
     graphics2d/imgui/imgui.cpp
     graphics2d/imgui/imgui_draw.cpp
     graphics2d/imgui/imgui_demo.cpp
     graphics2d/imgui/imgui_orient.cpp
-)
-
-SET(GRAPHICS3D_GL_SOURCES
-    graphics3d/GL/gl3w.c
-    graphics3d/GL/glcorearb.h
-    graphics3d/GL/texture.cpp
-    graphics3d/GL/texture.h
-    graphics3d/GL/shader.cpp
-    graphics3d/GL/shader.h
-    graphics2d/GL/imgui_impl_sdl_gl3.cpp
-    graphics2d/GL/imgui_impl_sdl_gl3.h
 )
 
 SET(GRAPHICS3D_CAMERA_SOURCES
@@ -48,29 +59,37 @@ SET(GRAPHICS3D_GEOMETRY_SOURCES
 
 SET(GRAPHICS3D_UI_SOURCES
     graphics3d/ui/manipulator.h
+    graphics3d/ui/manipulator.cpp
 )
+
+SET(GRAPHICS3D_SCENE_SOURCES
+    graphics3d/scene/scene.h
+    graphics3d/scene/scene.cpp
+    )
 
 SET(HOST_SOURCES
     host/main.cpp
 )
 
-SET(APP_SOURCES
-    glrender.cpp
-    glrender.h
-    common.h
+SET(COMMON_SOURCES
+    common/common.h
+    common/mathutils.h
+    common/mathutils.cpp
 )
 
 # Sources
 SET(SOURCES
+    ${COMMON_SOURCES}
     ${IMGUI_SOURCES}
     ${GRAPHICS3D_CAMERA_SOURCES}
     ${GRAPHICS3D_GEOMETRY_SOURCES}
     ${GRAPHICS3D_UI_SOURCES}
     ${GRAPHICS3D_GL_SOURCES}
+    ${GRAPHICS3D_SCENE_SOURCES}
+    ${GRAPHICS3D_DEVICEGL_SOURCES}
+    ${GRAPHICS3D_DEVICE_SOURCES}
     ${HOST_SOURCES}
-    glrender.cpp
-    glrender.h
-    common.h
+    ${APP_SOURCES}
     )
 
 INCLUDE_DIRECTORIES(imgui
@@ -78,7 +97,9 @@ INCLUDE_DIRECTORIES(imgui
     lib/sdl/include
     lib/glm
     lib
+    common
     graphics3d
+    graphics3d/device
     graphics2d
     graphics2d/imgui
     .
@@ -104,5 +125,9 @@ SOURCE_GROUP (2D\\ImGui FILES ${IMGUI_SOURCES})
 SOURCE_GROUP (3D\\Geometry FILES ${GRAPHICS3D_GEOMETRY_SOURCES})
 SOURCE_GROUP (3D\\Camera FILES ${GRAPHICS3D_CAMERA_SOURCES})
 SOURCE_GROUP (3D\\UI FILES ${GRAPHICS3D_UI_SOURCES})
-SOURCE_GROUP (3D\\GL FILES ${GRAPHICS3D_GL_SOURCES})
+SOURCE_GROUP (3D\\Scene FILES ${GRAPHICS3D_SCENE_SOURCES})
+SOURCE_GROUP (3D\\Device FILES ${GRAPHICS3D_DEVICE_SOURCES})
+SOURCE_GROUP (3D\\Device\\GL FILES ${GRAPHICS3D_DEVICEGL_SOURCES})
 SOURCE_GROUP (Host FILES ${HOST_SOURCES})
+SOURCE_GROUP (App FILES ${APP_SOURCES})
+SOURCE_GROUP (Common FILES ${COMMON_SOURCES})
