@@ -5,6 +5,7 @@
 
 #include "camera/camera.h"
 #include "scene/scene.h"
+#include "scene/mesh.h"
 #include "ui/manipulator.h"
 
 int main(int, char**)
@@ -20,6 +21,10 @@ int main(int, char**)
     // It contains a camera
     std::shared_ptr<Scene> spScene = std::make_shared<Scene>();
     spScene->SetClearColor(glm::vec4(0.7f, .7f, .8f, 1.0f));
+
+    std::shared_ptr<Mesh> spMesh = std::make_shared<Mesh>();
+    spMesh->Load("suzanne.obj");
+    spScene->AddMesh(spMesh);
 
     auto pCamera = spScene->GetCurrentCamera();
     pCamera->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));

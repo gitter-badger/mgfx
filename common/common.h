@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <memory>
 #include <vector>
+#include <map>
 
 // Include GLM
 #include <glm/glm.hpp>

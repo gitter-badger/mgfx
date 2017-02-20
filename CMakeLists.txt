@@ -75,6 +75,8 @@ SET(COMMON_SOURCES
     common/common.h
     common/mathutils.h
     common/mathutils.cpp
+    common/fileutils.cpp
+    common/fileutils.h
 )
 
 # Sources
