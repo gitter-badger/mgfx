@@ -65,6 +65,8 @@ SET(GRAPHICS3D_UI_SOURCES
 SET(GRAPHICS3D_SCENE_SOURCES
     graphics3d/scene/scene.h
     graphics3d/scene/scene.cpp
+    graphics3d/scene/mesh.cpp
+    graphics3d/scene/mesh.h
     )
 
 SET(HOST_SOURCES

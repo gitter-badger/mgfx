@@ -14,47 +14,60 @@ bool Mesh::Load(const char* pszModel)
 
     std::string err;
     bool ret = tinyobj::LoadObj(&m_attrib, &m_shapes, &m_materials, &err, strPath.c_str());
-
     if (!err.empty())
-    { // `err` may contain warning message.
+    {
         return false;
     }
 
-    if (!ret)
+    std::shared_ptr<MeshPart> spPart;
+    for (auto& shape : m_shapes)
     {
-        exit(1);
-    }
+        tinyobj::mesh_t& m = shape.mesh;
 
-    /*
-    // Loop over shapes
-    for (size_t s = 0; s < m_shapes.size(); s++)
-    {
-        // Loop over faces(polygon)
-        size_t index_offset = 0;
-        for (size_t f = 0; f < m_shapes[s].mesh.num_face_vertices.size(); f++)
+        bool newPart = true;
+        for (size_t j = 0; j < m.indices.size(); j += 3)
         {
-            int fv = m_shapes[s].mesh.num_face_vertices[f];
-
-            // Loop over vertices in the face.
-            for (size_t v = 0; v < fv; v++)
+            if (spPart &&
+                spPart->MaterialID != m.material_ids[j / 3])
             {
-                // access to vertex
-                tinyobj::index_t idx = m_shapes[s].mesh.indices[index_offset + v];
-                float vx = m_attrib.vertices[3 * idx.vertex_index + 0];
-                float vy = m_attrib.vertices[3 * idx.vertex_index + 1];
-                float vz = attrib.vertices[3 * idx.vertex_index + 2];
-                float nx = attrib.normals[3 * idx.normal_index + 0];
-                float ny = attrib.normals[3 * idx.normal_index + 1];
-                float nz = attrib.normals[3 * idx.normal_index + 2];
-                float tx = attrib.texcoords[2 * idx.texcoord_index + 0];
-                float ty = attrib.texcoords[2 * idx.texcoord_index + 1];
+                m_meshParts.push_back(spPart);
+                newPart = true;
             }
-            index_offset += fv;
+            
+            if (newPart)
+            {
+                newPart = false;
+                spPart = std::make_shared<MeshPart>();
+                spPart->MaterialID = m.material_ids[j / 3];
+                spPart->PartName = shape.name;
+            }
 
-            // per-face material
-            shapes[s].mesh.material_ids[f];
+            // !! Fix me for quads, etc.
+            assert(m.num_face_vertices[j / 3] == 3);
+            for (int v = 0; v < m.num_face_vertices[j / 3]; v++)
+            {
+                tinyobj::index_t index = m.indices[j + v];
+                glm::vec3 pos = glm::vec3(m_attrib.vertices[index.vertex_index * 3 + 0],
+                    m_attrib.vertices[index.vertex_index * 3 + 1],
+                    m_attrib.vertices[index.vertex_index * 3 + 2]);
+
+                glm::vec3 normal = glm::vec3(m_attrib.normals[index.normal_index * 3 + 0],
+                    m_attrib.normals[index.normal_index * 3 + 1],
+                    m_attrib.normals[index.normal_index * 3 + 2]);
+
+                glm::vec2 tex = glm::vec2(m_attrib.texcoords[index.texcoord_index * 2 + 0],
+                    m_attrib.normals[index.texcoord_index * 2 + 1]);
+
+                spPart->Positions.push_back(pos);
+                spPart->Normals.push_back(normal);
+                spPart->UVs.push_back(tex);
+            }
+        }
+
+        if (!newPart)
+        {
+            m_meshParts.push_back(spPart);
         }
     }
-    */
     return true;
 }

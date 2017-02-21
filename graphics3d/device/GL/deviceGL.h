@@ -64,3 +64,13 @@ private:
     uint32_t Texture = 0;
 
 };
+
+inline void CheckGL(const char* call, const char* file, int line)
+{
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR)
+    {
+        std::cout << std::hex << err << file << ":" << line << call << std::endl;
+    }
+}
+#define CHECK_GL(stmt) do { stmt; CheckGL(#stmt, __FILE__, __LINE__);  } while (0)

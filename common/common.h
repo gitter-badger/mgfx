@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <iostream>
 
 // Include GLM
 #include <glm/glm.hpp>
