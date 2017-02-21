@@ -224,7 +224,7 @@ public:
     glm::mat4 GetProjection() const
     {
         // TODO; ZClip
-        return glm::perspectiveFov(glm::radians(fieldOfView), float(filmSize.x), float(filmSize.y), .01f, 1000.0f);
+        return glm::perspectiveFov(glm::radians(fieldOfView), float(filmSize.x), float(filmSize.y), .01f, 10000.0f);
     }
 
 private:

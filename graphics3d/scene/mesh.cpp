@@ -13,8 +13,12 @@ bool Mesh::Load(const char* pszModel)
     }
 
     std::string err;
-    bool ret = tinyobj::LoadObj(&m_attrib, &m_shapes, &m_materials, &err, strPath.c_str());
+    bool ret = tinyobj::LoadObj(&m_attrib, &m_shapes, &m_materials, &err, strPath.c_str(), GetDir(strPath.c_str()).c_str(), true);
     if (!err.empty())
+    {
+        // TODO: Output message
+    }
+    if (!ret)
     {
         return false;
     }
@@ -42,7 +46,7 @@ bool Mesh::Load(const char* pszModel)
                 spPart->PartName = shape.name;
             }
 
-            // !! Fix me for quads, etc.
+            // Note: we ask for triangulation of the data
             assert(m.num_face_vertices[j / 3] == 3);
             for (int v = 0; v < m.num_face_vertices[j / 3]; v++)
             {
@@ -51,12 +55,20 @@ bool Mesh::Load(const char* pszModel)
                     m_attrib.vertices[index.vertex_index * 3 + 1],
                     m_attrib.vertices[index.vertex_index * 3 + 2]);
 
-                glm::vec3 normal = glm::vec3(m_attrib.normals[index.normal_index * 3 + 0],
-                    m_attrib.normals[index.normal_index * 3 + 1],
-                    m_attrib.normals[index.normal_index * 3 + 2]);
+                glm::vec3 normal;
+                if (!m_attrib.normals.empty())
+                {
+                    normal = glm::vec3(m_attrib.normals[index.normal_index * 3 + 0],
+                        m_attrib.normals[index.normal_index * 3 + 1],
+                        m_attrib.normals[index.normal_index * 3 + 2]);
+                }
 
-                glm::vec2 tex = glm::vec2(m_attrib.texcoords[index.texcoord_index * 2 + 0],
-                    m_attrib.normals[index.texcoord_index * 2 + 1]);
+                glm::vec2 tex;
+                if (!m_attrib.texcoords.empty())
+                {
+                    tex = glm::vec2(m_attrib.texcoords[index.texcoord_index * 2 + 0],
+                        m_attrib.texcoords[index.texcoord_index * 2 + 1]);
+                }
 
                 spPart->Positions.push_back(pos);
                 spPart->Normals.push_back(normal);

@@ -9,17 +9,23 @@
 #include "IDevice.h"
 
 class Camera;
+class Mesh;
+struct MeshPart;
 class Scene;
 struct SDL_Window;
 union SDL_Event;
 
+struct GLMeshPart
+{
+    uint32_t positionID = 0;
+    uint32_t normalID = 0;
+    uint32_t uvID = 0;
+    uint32_t numVertices = 0;
+};
+
 struct GLMesh
 {
-    uint32_t VertexArrayID = 0;
-    uint32_t vertexbuffer = 0;
-    uint32_t uvbuffer = 0;
-    uint32_t normalbuffer = 0;
-    uint32_t numVertices = 0;
+    std::map<MeshPart*, std::shared_ptr<GLMeshPart>> m_glMeshParts;
 };
 
 class DeviceGL : public IDevice
@@ -50,6 +56,7 @@ private:
     SDL_Window* pWindow = nullptr;
     SDL_GLContext glContext;
 
+    uint32_t VertexArrayID = 0;
 
     uint32_t programID = 0;
 

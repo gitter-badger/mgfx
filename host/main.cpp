@@ -23,7 +23,7 @@ int main(int, char**)
     spScene->SetClearColor(glm::vec4(0.7f, .7f, .8f, 1.0f));
 
     std::shared_ptr<Mesh> spMesh = std::make_shared<Mesh>();
-    spMesh->Load("suzanne.obj");
+    spMesh->Load("suzanne.obj");// sponza / sponza.obj");
     spScene->AddMesh(spMesh);
 
     auto pCamera = spScene->GetCurrentCamera();

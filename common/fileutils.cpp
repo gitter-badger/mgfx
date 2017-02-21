@@ -11,3 +11,9 @@ std::string GetMediaPath(const char* pszMediaName)
     fs::path basePath(SDL_GetBasePath());
     return (basePath / pszMediaName).generic_string();
 }
+
+std::string GetDir(const char* pszPath)
+{
+    fs::path p(pszPath);
+    return p.parent_path().string() + "/";
+}

@@ -90,6 +90,9 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
     glUseProgram(programID);
     LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
+    glGenVertexArrays(1, &VertexArrayID);
+    glBindVertexArray(VertexArrayID);
+
     // Setup ImGui binding
     ImGui_ImplSdlGL3_Init(pWindow);
 
@@ -123,34 +126,38 @@ void DeviceGL::DestroyDeviceMeshes()
 
 void DeviceGL::DestroyDeviceMesh(GLMesh* pDeviceMesh)
 {
-    glDeleteBuffers(1, &pDeviceMesh->normalbuffer);
-    glDeleteBuffers(1, &pDeviceMesh->uvbuffer);
-    glDeleteBuffers(1, &pDeviceMesh->vertexbuffer);
-    glDeleteVertexArrays(1, &pDeviceMesh->VertexArrayID);
+    for (auto& indexPart : pDeviceMesh->m_glMeshParts)
+    {
+        auto& spGLPart = indexPart.second;
+        glDeleteBuffers(1, &spGLPart->normalID);
+        glDeleteBuffers(1, &spGLPart->positionID);
+        glDeleteBuffers(1, &spGLPart->uvID);
+    }
 }
 
 std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
 {
     auto spDeviceMesh = std::make_shared<GLMesh>();
-    glGenVertexArrays(1, &spDeviceMesh->VertexArrayID);
-    glBindVertexArray(spDeviceMesh->VertexArrayID);
 
-    for (auto& shape : pMesh->GetShapes())
+
+    for (auto& spPart : pMesh->GetMeshParts())
     {
-        /*
-        // Load it into a VBO
-        glGenBuffers(1, &spDeviceMesh->vertexbuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, spDeviceMesh->vertexbuffer);
-        glBufferData(GL_ARRAY_BUFFER, shape.mesh.size() * sizeof(glm::vec3), &pMesh->GetVertices()[0], GL_STATIC_DRAW);
+        auto spGLPart = std::make_shared<GLMeshPart>();
+        spGLPart->numVertices = uint32_t(spPart->Positions.size());
 
-        glGenBuffers(1, &spDeviceMesh->uvbuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, spDeviceMesh->uvbuffer);
-        glBufferData(GL_ARRAY_BUFFER, shape.mesh.size() * sizeof(glm::vec2), &pMesh->GetUVs()[0], GL_STATIC_DRAW);
+        CHECK_GL(glGenBuffers(1, &spGLPart->positionID));
+        CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->positionID));
+        CHECK_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*spPart->Positions.size(), spPart->Positions.data(), GL_STATIC_DRAW));
 
-        glGenBuffers(1, &spDeviceMesh->normalbuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, spDeviceMesh->normalbuffer);
-        glBufferData(GL_ARRAY_BUFFER, pMesh->->normals.size() * sizeof(glm::vec3), &spDeviceMesh->normals[0], GL_STATIC_DRAW);
-        */
+        CHECK_GL(glGenBuffers(1, &spGLPart->normalID));
+        CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->normalID));
+        CHECK_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*spPart->Normals.size(), spPart->Normals.data(), GL_STATIC_DRAW));
+
+        CHECK_GL(glGenBuffers(1, &spGLPart->uvID));
+        CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->uvID));
+        CHECK_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2)*spPart->UVs.size(), spPart->UVs.data(), GL_STATIC_DRAW));
+
+        spDeviceMesh->m_glMeshParts[spPart.get()] = spGLPart;
     }
 
     return spDeviceMesh;
@@ -171,9 +178,10 @@ void DeviceGL::Draw(Mesh* pMesh)
         pDeviceMesh = itrFound->second.get();
     }
 
-    glBindVertexArray(pDeviceMesh->VertexArrayID);
+ //   glBindVertexArray(pDeviceMesh->VertexArrayID);
 
     // 1rst attribute buffer : vertices
+    /*
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, pDeviceMesh->vertexbuffer);
     glVertexAttribPointer(
@@ -208,9 +216,37 @@ void DeviceGL::Draw(Mesh* pMesh)
         0,                                // stride
         (void*)0                          // array buffer offset
     );
+    */
 
-    // Draw the triangles !
-    glDrawArrays(GL_TRIANGLES, 0, pDeviceMesh->numVertices);
+    for (auto& indexPart : pDeviceMesh->m_glMeshParts)
+    {
+        auto spGLPart = indexPart.second;
+
+        CHECK_GL(glEnableVertexAttribArray(0));
+        CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->positionID));
+        CHECK_GL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0));
+
+        CHECK_GL(glEnableVertexAttribArray(1));
+        CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->normalID));
+        CHECK_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0));
+
+        CHECK_GL(glEnableVertexAttribArray(2)); 
+        CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->uvID));
+        CHECK_GL(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0));
+    
+        glDrawArrays(GL_TRIANGLES, 0, spGLPart->numVertices);
+    }
+
+    // enable texture.
+    /*
+    Material mat = materials[mesh->matId];
+    if (mat.diffuseTexFile != "") {
+        GL_C(glBindTexture(GL_TEXTURE_2D, mat.diffuseTex));
+        GL_C(glActiveTexture(GL_TEXTURE0));
+        GL_C(glUniform1i(glGetUniformLocation(outputGeoShader, "uDiffTex"), 0));
+    }
+    */
+
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
@@ -270,6 +306,8 @@ void DeviceGL::Cleanup()
 
     DestroyDeviceMeshes();
 
+    glDeleteVertexArrays(1, &VertexArrayID);
+
     glDeleteTextures(1, &Texture);
 
     glDeleteProgram(programID);
@@ -296,8 +334,7 @@ void DeviceGL::Swap()
     SDL_GL_SwapWindow(pWindow);
 }
 
-#if 0
-/*
+#if false 
 inline char* GetShaderLogInfo(GLuint shader) {
     GLint len;
     GLsizei actualLen;
