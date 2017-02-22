@@ -80,6 +80,7 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
 
     // Get a handle for our "myTextureSampler" uniform
     TextureID = glGetUniformLocation(programID, "myTextureSampler");
+    TextureIDSpecular = glGetUniformLocation(programID, "myTextureSamplerSpecular");
 
     // Get a handle for our "LightPosition" uniform
     glUseProgram(programID);
@@ -137,6 +138,54 @@ void DeviceGL::DestroyDeviceMesh(GLMesh* pDeviceMesh)
 
 }
 
+uint32_t DeviceGL::LoadTexture(std::string path)
+{
+    auto itr = m_mapTexToID.find(path);
+    if (itr == m_mapTexToID.end())
+    {
+        int w;
+        int h;
+        int comp;
+        std::string root("models/sponza");
+        std::string matPath = root + "/" + path;
+        unsigned char* image = stbi_load(GetMediaPath(matPath.c_str()).c_str(), &w, &h, &comp, STBI_default);
+
+        assert(image != nullptr);
+        if (image != nullptr)
+        {
+            uint32_t textureID;
+            glGenTextures(1, &textureID);
+            glBindTexture(GL_TEXTURE_2D, textureID);
+
+            if (comp == 3)
+            {
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+            }
+            else if (comp == 4)
+            {
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+            }
+
+            CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+            CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+            CHECK_GL(glGenerateMipmap(GL_TEXTURE_2D));
+            CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+            CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            stbi_image_free(image);
+            m_mapTexToID[path] = textureID;
+            return textureID;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    return itr->second;
+}
+
 std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
 {
     auto spDeviceMesh = std::make_shared<GLMesh>();
@@ -161,47 +210,12 @@ std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
         auto& mat = pMesh->GetMaterials()[spPart->MaterialID];
         if (!mat.diffuse_texname.empty())
         {
-            auto itr = m_mapTexToID.find(mat.diffuse_texname);
-            if (itr == m_mapTexToID.end())
-            {
-                int w;
-                int h;
-                int comp;
-                std::string root("models/sponza");
-                std::string matPath = root + "/" + mat.diffuse_texname;
-                unsigned char* image = stbi_load(GetMediaPath(matPath.c_str()).c_str(), &w, &h, &comp, STBI_default);
+            spGLPart->textureID = LoadTexture(mat.diffuse_texname);
+        }
 
-                assert(image != nullptr);
-                if (image != nullptr)
-                {
-                    glGenTextures(1, &spGLPart->textureID);
-                    glBindTexture(GL_TEXTURE_2D, spGLPart->textureID);
-
-                    if (comp == 3)
-                    {
-                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-                    }
-                    else if (comp == 4)
-                    {
-                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-                    }
-
-                    CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
-                    CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
-                    CHECK_GL(glGenerateMipmap(GL_TEXTURE_2D));
-                    CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-                    CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-
-                    glBindTexture(GL_TEXTURE_2D, 0);
-
-                    stbi_image_free(image);
-                }
-                m_mapTexToID[mat.diffuse_texname] = spGLPart->textureID;
-            }
-            else
-            {
-                spGLPart->textureID = itr->second;
-            }
+        if (!mat.specular_texname.empty())
+        {
+            spGLPart->textureIDSpecular = LoadTexture(mat.specular_texname);
         }
         spDeviceMesh->m_glMeshParts[spPart.get()] = spGLPart;
     }
@@ -245,14 +259,22 @@ void DeviceGL::Draw(Mesh* pMesh)
         if (spGLPart->textureID)
         {
             CHECK_GL(glBindTexture(GL_TEXTURE_2D, spGLPart->textureID));
-            glDrawArrays(GL_TRIANGLES, 0, spGLPart->numVertices);
         }
         else
         {
-            //glBindTexture(GL_TEXTURE_2D, 0);
+            glBindTexture(GL_TEXTURE_2D, 0);
         }
 
-        //glDrawArrays(GL_TRIANGLES, 0, spGLPart->numVertices);
+        CHECK_GL(glActiveTexture(GL_TEXTURE1));
+        if (spGLPart->textureIDSpecular)
+        {
+            CHECK_GL(glBindTexture(GL_TEXTURE_2D, spGLPart->textureIDSpecular));
+        }
+        else
+        {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+        glDrawArrays(GL_TRIANGLES, 0, spGLPart->numVertices);
     }
 
     glDisableVertexAttribArray(0);
@@ -293,13 +315,17 @@ bool DeviceGL::Render()
     glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &model[0][0]);
     glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &view[0][0]);
 
-    glm::vec3 lightPos = glm::vec3(4, 5000, 4);
+    glm::vec3 lightPos = glm::vec3(4, 4, 4);
     glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
     // Bind our texture in Texture Unit 0
     glActiveTexture(GL_TEXTURE0);
     // Set our "myTextureSampler" sampler to user Texture Unit 0
     glUniform1i(TextureID, 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    // Set our "myTextureSamplerSpecular" sampler to user Texture Unit 1
+    glUniform1i(TextureIDSpecular, 1);
 
     m_spScene->Render(this);
 

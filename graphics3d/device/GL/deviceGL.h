@@ -22,6 +22,7 @@ struct GLMeshPart
     uint32_t uvID = 0;
     uint32_t numVertices = 0;
     uint32_t textureID = 0;
+    uint32_t textureIDSpecular = 0;
 };
 
 struct GLMesh
@@ -46,6 +47,7 @@ public:
 
 private:
     std::shared_ptr<GLMesh> BuildDeviceMesh(Mesh* pMesh);
+    uint32_t LoadTexture(std::string path);
     void DestroyDeviceMesh(GLMesh* pDeviceMesh);
     void DestroyDeviceMeshes();
 
@@ -67,6 +69,7 @@ private:
     uint32_t ModelMatrixID = 0;
 
     uint32_t TextureID = 0; 
+    uint32_t TextureIDSpecular = 0; 
 
     uint32_t LightID = 0;
 
