@@ -9,7 +9,7 @@ namespace fs = std::experimental::filesystem::v1;
 std::string GetMediaPath(const char* pszMediaName)
 {
     fs::path basePath(SDL_GetBasePath());
-    return (basePath / pszMediaName).generic_string();
+    return (basePath / "assets" / pszMediaName).generic_string();
 }
 
 std::string GetDir(const char* pszPath)

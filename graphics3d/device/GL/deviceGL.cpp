@@ -19,7 +19,7 @@ void APIENTRY DebugCB(GLenum source, GLenum type, GLuint id, GLenum severity, GL
         else if (type == GL_DEBUG_TYPE_ERROR)
         {
             std::cout << "GLError: " << message;
-            DebugBreak();
+            //DebugBreak();
         }
         else
         {
@@ -42,7 +42,7 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     SDL_DisplayMode current;
@@ -68,7 +68,7 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
     CHECK_GL(glEnable(GL_CULL_FACE));
 
     // Create and compile our GLSL program from the shaders
-    programID = LoadShaders(GetMediaPath("StandardShading.vertexshader").c_str(), GetMediaPath("StandardShading.fragmentshader").c_str());
+    programID = LoadShaders(GetMediaPath("shaders/GL/StandardShading.vertexshader").c_str(), GetMediaPath("shaders/GL/StandardShading.fragmentshader").c_str());
 
     // Get a handle for our "MVP" uniform
     MatrixID = glGetUniformLocation(programID, "MVP");
@@ -76,7 +76,7 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
     ModelMatrixID = glGetUniformLocation(programID, "M");
 
     // Load the texture
-    Texture = loadDDS(GetMediaPath("uvmap.DDS").c_str());
+    Texture = loadDDS(GetMediaPath("textures/uvmap.DDS").c_str());
     if (!Texture)
     {
         Cleanup();
@@ -286,7 +286,7 @@ bool DeviceGL::Render()
     glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &model[0][0]);
     glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &view[0][0]);
 
-    glm::vec3 lightPos = glm::vec3(4, 4, 4);
+    glm::vec3 lightPos = glm::vec3(4, 5000, 4);
     glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
     // Bind our texture in Texture Unit 0
@@ -344,23 +344,6 @@ inline char* GetShaderLogInfo(GLuint shader) {
     return infoLog;
 }
 
-
-    // upload mesh to GPU.
-    void UploadMesh() {
-        GL_C(glGenBuffers(1, &this->positionVbo));
-        GL_C(glBindBuffer(GL_ARRAY_BUFFER, this->positionVbo));
-        GL_C(glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*this->positions.size(), this->positions.data(), GL_STATIC_DRAW));
-
-        GL_C(glGenBuffers(1, &this->normalVbo));
-        GL_C(glBindBuffer(GL_ARRAY_BUFFER, this->normalVbo));
-        GL_C(glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*this->normals.size(), this->normals.data(), GL_STATIC_DRAW));
-
-        GL_C(glGenBuffers(1, &this->uvVbo));
-        GL_C(glBindBuffer(GL_ARRAY_BUFFER, this->uvVbo));
-        GL_C(glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*this->uvs.size(), this->uvs.data(), GL_STATIC_DRAW));
-    }
-};
-
 GLuint LoadTexture(const char* file) {
     std::vector<unsigned char> buffer;
     lodepng::load_file(buffer, file);
@@ -391,35 +374,6 @@ GLuint LoadTexture(const char* file) {
 
     return tex;
 }
-
-void Render() {
-
-    // setup GL state.
-    GL_C(glEnable(GL_DEPTH_TEST));
-    GL_C(glDepthMask(true));
-    GL_C(glDisable(GL_BLEND));
-    GL_C(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
-    GL_C(glEnable(GL_CULL_FACE));
-    GL_C(glFrontFace(GL_CCW));
-
-    // now we render all the meshes, one after one.
-    for (Mesh* mesh : meshes) {
-        //
-        // setup vertex attribs.
-        //
-        GL_C(glEnableVertexAttribArray(0));
-        GL_C(glBindBuffer(GL_ARRAY_BUFFER, mesh->positionVbo));
-        GL_C(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0));
-
-        GL_C(glEnableVertexAttribArray(1));
-        GL_C(glBindBuffer(GL_ARRAY_BUFFER, mesh->normalVbo));
-        GL_C(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0));
-
-        GL_C(glEnableVertexAttribArray(2));
-        GL_C(glBindBuffer(GL_ARRAY_BUFFER, mesh->uvVbo));
-        GL_C(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0));
-
-        // enable texture.
 
         Material mat = materials[mesh->matId];
         if (mat.diffuseTexFile != "") {

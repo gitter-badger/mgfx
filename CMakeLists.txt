@@ -119,10 +119,10 @@ opengl32.lib
 )
 
 copy_files(lib/sdl/${PROCESSOR_ARCH}/*.dll ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
-copy_files(assets/models/*.* ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
-copy_files(assets/textures/*.* ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
-copy_files(assets/shaders/GL/*.* ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
 
+add_custom_command(TARGET GLShell POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                       ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:GLShell>/assets)
 SOURCE_GROUP(2D)
 SOURCE_GROUP(3D)
 SOURCE_GROUP (2D\\ImGui FILES ${IMGUI_SOURCES})

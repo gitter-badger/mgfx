@@ -16,7 +16,7 @@ void Manipulator::ProcessEvent(SDL_Event& event)
     else if (event.type == SDL_MOUSEBUTTONUP)
     {
         /* If the left button was pressed. */
-        if (event.button.button == SDL_BUTTON_LEFT)
+        if (event.button.button == SDL_BUTTON_LEFT) 
         {
             int x, y;
             SDL_GetMouseState(&x, &y);
