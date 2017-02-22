@@ -7,6 +7,9 @@
 
 #include <iostream>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
+
 void APIENTRY DebugCB(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *param)
 {
     DeviceGL* pDevice = (DeviceGL*)param;
@@ -75,14 +78,6 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
     ViewMatrixID = glGetUniformLocation(programID, "V");
     ModelMatrixID = glGetUniformLocation(programID, "M");
 
-    // Load the texture
-    Texture = loadDDS(GetMediaPath("textures/uvmap.DDS").c_str());
-    if (!Texture)
-    {
-        Cleanup();
-        return false;
-    }
-
     // Get a handle for our "myTextureSampler" uniform
     TextureID = glGetUniformLocation(programID, "myTextureSampler");
 
@@ -122,6 +117,12 @@ void DeviceGL::DestroyDeviceMeshes()
         DestroyDeviceMesh(spMesh.second.get());
     }
     m_mapDeviceMeshes.clear();
+    
+    for (auto& tex : m_mapTexToID)
+    {
+        glDeleteTextures(1, &tex.second);
+    }
+    m_mapTexToID.clear();
 }
 
 void DeviceGL::DestroyDeviceMesh(GLMesh* pDeviceMesh)
@@ -133,12 +134,12 @@ void DeviceGL::DestroyDeviceMesh(GLMesh* pDeviceMesh)
         glDeleteBuffers(1, &spGLPart->positionID);
         glDeleteBuffers(1, &spGLPart->uvID);
     }
+
 }
 
 std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
 {
     auto spDeviceMesh = std::make_shared<GLMesh>();
-
 
     for (auto& spPart : pMesh->GetMeshParts())
     {
@@ -157,6 +158,51 @@ std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
         CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->uvID));
         CHECK_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2)*spPart->UVs.size(), spPart->UVs.data(), GL_STATIC_DRAW));
 
+        auto& mat = pMesh->GetMaterials()[spPart->MaterialID];
+        if (!mat.diffuse_texname.empty())
+        {
+            auto itr = m_mapTexToID.find(mat.diffuse_texname);
+            if (itr == m_mapTexToID.end())
+            {
+                int w;
+                int h;
+                int comp;
+                std::string root("models/sponza");
+                std::string matPath = root + "/" + mat.diffuse_texname;
+                unsigned char* image = stbi_load(GetMediaPath(matPath.c_str()).c_str(), &w, &h, &comp, STBI_default);
+
+                assert(image != nullptr);
+                if (image != nullptr)
+                {
+                    glGenTextures(1, &spGLPart->textureID);
+                    glBindTexture(GL_TEXTURE_2D, spGLPart->textureID);
+
+                    if (comp == 3)
+                    {
+                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+                    }
+                    else if (comp == 4)
+                    {
+                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+                    }
+
+                    CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+                    CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+                    CHECK_GL(glGenerateMipmap(GL_TEXTURE_2D));
+                    CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+                    CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+
+                    glBindTexture(GL_TEXTURE_2D, 0);
+
+                    stbi_image_free(image);
+                }
+                m_mapTexToID[mat.diffuse_texname] = spGLPart->textureID;
+            }
+            else
+            {
+                spGLPart->textureID = itr->second;
+            }
+        }
         spDeviceMesh->m_glMeshParts[spPart.get()] = spGLPart;
     }
 
@@ -178,75 +224,36 @@ void DeviceGL::Draw(Mesh* pMesh)
         pDeviceMesh = itrFound->second.get();
     }
 
- //   glBindVertexArray(pDeviceMesh->VertexArrayID);
-
-    // 1rst attribute buffer : vertices
-    /*
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, pDeviceMesh->vertexbuffer);
-    glVertexAttribPointer(
-        0,                  // attribute
-        3,                  // size
-        GL_FLOAT,           // type
-        GL_FALSE,           // normalized?
-        0,                  // stride
-        (void*)0            // array buffer offset
-    );
-
-    // 2nd attribute buffer : UVs
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, pDeviceMesh->uvbuffer);
-    glVertexAttribPointer(
-        1,                                // attribute
-        2,                                // size
-        GL_FLOAT,                         // type
-        GL_FALSE,                         // normalized?
-        0,                                // stride
-        (void*)0                          // array buffer offset
-    );
-
-    // 3rd attribute buffer : normals
-    glEnableVertexAttribArray(2);
-    glBindBuffer(GL_ARRAY_BUFFER, pDeviceMesh->normalbuffer);
-    glVertexAttribPointer(
-        2,                                // attribute
-        3,                                // size
-        GL_FLOAT,                         // type
-        GL_FALSE,                         // normalized?
-        0,                                // stride
-        (void*)0                          // array buffer offset
-    );
-    */
-
     for (auto& indexPart : pDeviceMesh->m_glMeshParts)
     {
         auto spGLPart = indexPart.second;
 
         CHECK_GL(glEnableVertexAttribArray(0));
         CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->positionID));
+        // attrib, size, type, normalized, stride, offset 
         CHECK_GL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0));
 
         CHECK_GL(glEnableVertexAttribArray(1));
         CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->normalID));
         CHECK_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0));
 
-        CHECK_GL(glEnableVertexAttribArray(2)); 
+        CHECK_GL(glEnableVertexAttribArray(2));
         CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->uvID));
         CHECK_GL(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0));
-    
-        glDrawArrays(GL_TRIANGLES, 0, spGLPart->numVertices);
-    }
 
-    // enable texture.
-    /*
-    Material mat = materials[mesh->matId];
-    if (mat.diffuseTexFile != "") {
-        GL_C(glBindTexture(GL_TEXTURE_2D, mat.diffuseTex));
-        GL_C(glActiveTexture(GL_TEXTURE0));
-        GL_C(glUniform1i(glGetUniformLocation(outputGeoShader, "uDiffTex"), 0));
-    }
-    */
+        CHECK_GL(glActiveTexture(GL_TEXTURE0));
+        if (spGLPart->textureID)
+        {
+            CHECK_GL(glBindTexture(GL_TEXTURE_2D, spGLPart->textureID));
+            glDrawArrays(GL_TRIANGLES, 0, spGLPart->numVertices);
+        }
+        else
+        {
+            //glBindTexture(GL_TEXTURE_2D, 0);
+        }
 
+        //glDrawArrays(GL_TRIANGLES, 0, spGLPart->numVertices);
+    }
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
@@ -291,7 +298,6 @@ bool DeviceGL::Render()
 
     // Bind our texture in Texture Unit 0
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, Texture);
     // Set our "myTextureSampler" sampler to user Texture Unit 0
     glUniform1i(TextureID, 0);
 
@@ -308,7 +314,6 @@ void DeviceGL::Cleanup()
 
     glDeleteVertexArrays(1, &VertexArrayID);
 
-    glDeleteTextures(1, &Texture);
 
     glDeleteProgram(programID);
 
@@ -359,31 +364,10 @@ GLuint LoadTexture(const char* file) {
 
     GLuint tex;
     GL_C(glGenTextures(1, &tex));
-
     GL_C(glBindTexture(GL_TEXTURE_2D, tex));
-
     GL_C(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData.data()));
-
-    GL_C(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
-    GL_C(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
-    GL_C(glGenerateMipmap(GL_TEXTURE_2D));
-    GL_C(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-    GL_C(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-
-    GL_C(glBindTexture(GL_TEXTURE_2D, 0));
 
     return tex;
 }
-
-        Material mat = materials[mesh->matId];
-        if (mat.diffuseTexFile != "") {
-            GL_C(glBindTexture(GL_TEXTURE_2D, mat.diffuseTex));
-            GL_C(glActiveTexture(GL_TEXTURE0));
-            GL_C(glUniform1i(glGetUniformLocation(outputGeoShader, "uDiffTex"), 0));
-        }
-
-        glDrawArrays(GL_TRIANGLES, 0, mesh->positions.size());
-    }
-
 
 #endif

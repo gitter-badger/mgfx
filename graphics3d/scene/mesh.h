@@ -20,9 +20,9 @@ public:
 
     const tinyobj::attrib_t& GetAttrib() { return m_attrib; }
     const std::vector<tinyobj::shape_t>& GetShapes() const { return m_shapes; }
-    const std::vector<tinyobj::material_t> GetMaterials() const { return m_materials; }
+    const std::vector<tinyobj::material_t>& GetMaterials() const { return m_materials; }
 
-    const std::vector<std::shared_ptr<MeshPart>> GetMeshParts() const { return m_meshParts; }
+    const std::vector<std::shared_ptr<MeshPart>>& GetMeshParts() const { return m_meshParts; }
 
 private:
     std::vector<std::shared_ptr<MeshPart>> m_meshParts;

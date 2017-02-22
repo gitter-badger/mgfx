@@ -21,6 +21,7 @@ struct GLMeshPart
     uint32_t normalID = 0;
     uint32_t uvID = 0;
     uint32_t numVertices = 0;
+    uint32_t textureID = 0;
 };
 
 struct GLMesh
@@ -52,6 +53,7 @@ private:
     std::shared_ptr<Scene> m_spScene;
 
     std::map<Mesh*, std::shared_ptr<GLMesh>> m_mapDeviceMeshes;
+    std::map<std::string, uint32_t> m_mapTexToID;
 
     SDL_Window* pWindow = nullptr;
     SDL_GLContext glContext;
@@ -67,8 +69,6 @@ private:
     uint32_t TextureID = 0; 
 
     uint32_t LightID = 0;
-
-    uint32_t Texture = 0;
 
 };
 
