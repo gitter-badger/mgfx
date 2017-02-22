@@ -22,7 +22,7 @@ struct GLMeshPart
     uint32_t uvID = 0;
     uint32_t numVertices = 0;
     uint32_t textureID = 0;
-    uint32_t textureIDSpecular = 0;
+    uint32_t textureIDBump = 0;
 };
 
 struct GLMesh
@@ -69,7 +69,7 @@ private:
     uint32_t ModelMatrixID = 0;
 
     uint32_t TextureID = 0; 
-    uint32_t TextureIDSpecular = 0; 
+    uint32_t TextureIDBump = 0; 
 
     uint32_t LightID = 0;
 

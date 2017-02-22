@@ -80,7 +80,7 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
 
     // Get a handle for our "myTextureSampler" uniform
     TextureID = glGetUniformLocation(programID, "myTextureSampler");
-    TextureIDSpecular = glGetUniformLocation(programID, "myTextureSamplerSpecular");
+    TextureIDBump = glGetUniformLocation(programID, "myTextureSamplerBump");
 
     // Get a handle for our "LightPosition" uniform
     glUseProgram(programID);
@@ -213,9 +213,9 @@ std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
             spGLPart->textureID = LoadTexture(mat.diffuse_texname);
         }
 
-        if (!mat.specular_texname.empty())
+        if (!mat.bump_texname.empty())
         {
-            spGLPart->textureIDSpecular = LoadTexture(mat.specular_texname);
+            spGLPart->textureIDBump = LoadTexture(mat.bump_texname);
         }
         spDeviceMesh->m_glMeshParts[spPart.get()] = spGLPart;
     }
@@ -266,9 +266,9 @@ void DeviceGL::Draw(Mesh* pMesh)
         }
 
         CHECK_GL(glActiveTexture(GL_TEXTURE1));
-        if (spGLPart->textureIDSpecular)
+        if (spGLPart->textureIDBump)
         {
-            CHECK_GL(glBindTexture(GL_TEXTURE_2D, spGLPart->textureIDSpecular));
+            CHECK_GL(glBindTexture(GL_TEXTURE_2D, spGLPart->textureIDBump));
         }
         else
         {
@@ -325,7 +325,7 @@ bool DeviceGL::Render()
 
     glActiveTexture(GL_TEXTURE1);
     // Set our "myTextureSamplerSpecular" sampler to user Texture Unit 1
-    glUniform1i(TextureIDSpecular, 1);
+    glUniform1i(TextureIDBump, 1);
 
     m_spScene->Render(this);
 

@@ -77,6 +77,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 		std::vector<char> FragmentShaderErrorMessage(InfoLogLength+1);
 		glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
 		printf("%s\n", &FragmentShaderErrorMessage[0]);
+        OutputDebugStringA(&FragmentShaderErrorMessage[0]);
 	}
 
 
