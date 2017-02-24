@@ -69,9 +69,11 @@ private:
     uint32_t ModelMatrixID = 0;
 
     uint32_t TextureID = 0; 
+    uint32_t HasNormalMapID = 0;
     uint32_t TextureIDBump = 0; 
 
-    uint32_t LightID = 0;
+    uint32_t CameraID = 0;
+    uint32_t LightDirID = 0;
 
 };
 
@@ -80,7 +82,7 @@ inline void CheckGL(const char* call, const char* file, int line)
     GLenum err = glGetError();
     if (err != GL_NO_ERROR)
     {
-        std::cout << std::hex << err << file << ":" << line << call << std::endl;
+        LOG(ERROR) << std::hex << err << file << ":" << line << call;
     }
 }
 #define CHECK_GL(stmt) do { stmt; CheckGL(#stmt, __FILE__, __LINE__);  } while (0)

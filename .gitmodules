@@ -7,3 +7,6 @@
 [submodule "lib/stb"]
 	path = lib/stb
 	url = https://github.com/nothings/stb.git
+[submodule "lib/easylogging"]
+	path = lib/easylogging
+	url = https://github.com/cmaughan/easyloggingpp.git

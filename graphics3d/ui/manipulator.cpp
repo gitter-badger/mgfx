@@ -36,6 +36,50 @@ void Manipulator::ProcessEvent(SDL_Event& event)
             spCamera->SetFilmSize(glm::uvec2(event.window.data1, event.window.data2));
         }
     }
+    else if (event.type == SDL_KEYDOWN ||
+        event.type == SDL_KEYUP)
+    {
+        ProcessKeyboard(event);
+    }
+}
+
+void Manipulator::ProcessKeyboard(SDL_Event& event)
+{
+    auto io = ImGui::GetIO();
+    auto keyState = SDL_GetKeyboardState(nullptr);
+   
+    if (ImGui::GetIO().WantCaptureKeyboard ||
+        ImGui::GetIO().WantTextInput)
+    {
+        walkDirection = glm::vec3(0.0f);
+        return;
+    }
+
+    auto key = event.key.keysym.scancode;
+    if (key == SDL_SCANCODE_W)
+    {
+        walkDirection.z = event.key.state == SDL_PRESSED ? 1.0f : 0.0f;
+    }
+    else if (key == SDL_SCANCODE_S)
+    {
+        walkDirection.z = event.key.state == SDL_PRESSED ? -1.0f : 0.0f;
+    }
+    else if (key == SDL_SCANCODE_A)
+    {
+        walkDirection.x = event.key.state == SDL_PRESSED ? -1.0f : 0.0f;
+    }
+    else if (key == SDL_SCANCODE_D)
+    {
+        walkDirection.x = event.key.state == SDL_PRESSED ? 1.0f : 0.0f;
+    }
+    else if (key == SDL_SCANCODE_R)
+    {
+        walkDirection.y = event.key.state == SDL_PRESSED ? 1.0f : 0.0f;
+    }
+    else if (key == SDL_SCANCODE_F)
+    {
+        walkDirection.y = event.key.state == SDL_PRESSED ? -1.0f : 0.0f;
+    }
 }
 
 bool Manipulator::MouseMove(const glm::vec2& pos)
@@ -55,4 +99,12 @@ bool Manipulator::MouseMove(const glm::vec2& pos)
         startPos = pos;
     }
     return true;
+}
+
+void Manipulator::Update()
+{
+    if (walkDirection != glm::vec3(0.0f))
+    {
+        spCamera->Walk(walkDirection);
+    }
 }

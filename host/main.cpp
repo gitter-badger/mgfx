@@ -1,3 +1,4 @@
+
 #include "common.h"
 
 #include <GL/deviceGL.h>
@@ -8,12 +9,14 @@
 #include "scene/mesh.h"
 #include "ui/manipulator.h"
 
+INITIALIZE_EASYLOGGINGPP
+
 int main(int, char**)
 {
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) 
     {
-        printf("Error: %s\n", SDL_GetError());
+        LOG(ERROR) << SDL_GetError();
         return -1;
     }
 
@@ -51,7 +54,7 @@ int main(int, char**)
     while (!done)
     {
         SDL_Event event;
-        while (SDL_PollEvent(&event))
+        while  (SDL_PollEvent(&event))
         {
             pDevice->ProcessEvent(event);
             if (event.type == SDL_QUIT)
@@ -65,6 +68,8 @@ int main(int, char**)
                 pManipulator->ProcessEvent(event);
             }
         }
+
+        pManipulator->Update();
 
         // Draw the3D content
         if (pDevice->PreRender())

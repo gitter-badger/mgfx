@@ -1,32 +1,89 @@
 #version 330 core
 
-// Interpolated values from the vertex shaders
-in vec2 UV;
-in vec3 Position_worldspace;
-in vec3 Normal_cameraspace;
-in vec3 EyeDirection_cameraspace;
-in vec3 LightDirection_cameraspace;
+// Take in a diffuse color map and a normal map
+uniform sampler2D albedo_sampler;
+uniform sampler2D normal_sampler;
 
-// Ouput data
-out vec3 color;
+// The camera position, light direction and if we have a normal map
+uniform vec3 camera_pos;
+uniform vec3 light_dir;
+uniform bool has_normalmap;
 
-// Values that stay constant for the whole mesh.
-uniform sampler2D myTextureSampler;
-uniform mat4 MV;
-uniform vec3 LightPosition_worldspace;
+// These values passed through from the vertex shader
+in vec2 frag_tex_coord;
+in vec3 frag_normal;
+in vec3 frag_pos_world;
+in vec4 frag_color;
 
-vec3 Sky( vec3 ray )
+// The output color
+out vec4 color;
+
+// Given a surface normal and a normal map normal, calculate the pixel space normal
+vec3 applyNormalMap(vec3 geomnor, vec3 normap)
 {
-	return mix( vec3(.8), vec3(0), exp2(-(1.0/max(ray.y,.01))*vec3(.4,.6,1.0)) );
+    normap = normap * 2.0 - 1.0;
+    vec3 up = normalize(vec3(0.001, 1, 0.001));
+    vec3 surftan = normalize(cross(geomnor, up));
+    vec3 surfbinor = cross(geomnor, surftan);
+    return normalize(normap.y * surftan + normap.x * surfbinor + normap.z * geomnor);
+}
+
+// A quick and dirty light calculation.  Surfaces are 'blue-ish' on top 
+// and red-ish on the bottom, simply by blending the normal y direction with colors
+vec3 CalcAmbient(vec3 normal)
+{
+    vec3 AmbientDown = vec3(.15f, .1f, .11f);
+    vec3 AmbientRange = vec3(.8f, .85f, 1.00000000f);
+    float up = normal.y * 0.5 + 0.5;
+    vec3 ambient = AmbientDown + up * AmbientRange;
+    return ambient;
 }
 
 void main()
 {
-    vec3 diffuse = texture( myTextureSampler, UV *vec2(1.0f, -1.0f)).rgb;
+    // Sample the diffuse map
+    vec4 diffuse = texture(albedo_sampler, frag_tex_coord).rgba;
+
+    // Sample the normal map
+    vec3 normal;
+    if (has_normalmap)
+    {
+        normal = applyNormalMap(frag_normal, texture(normal_sampler, frag_tex_coord).rgb);
+    }
+    else
+    {
+        normal = frag_normal;
+    }
+
+    // Do a simple ambient light calculation
+    vec3 illuminance = CalcAmbient(normal) * diffuse.rgb;
+
+    // Implement a 'highlight' spotlight facing away from the viewer
+    vec3 light_pos = camera_pos;
+
+    // Light vector.
+    vec3 L = light_pos - frag_pos_world;
     
-    vec3 ray = reflect(normalize(EyeDirection_cameraspace), normalize(Normal_cameraspace) );
-    vec3 sky = Sky(ray);
+    // Normalize light vector.
+    L = normalize(L);
 
-    color = diffuse * sky.b;
+    // cone fall-off 
+    float cosDir = max(dot(L, -light_dir), 0.0f);
+    float spotEffect = pow(cosDir, 20) * .5f; 
+   
+    // Brightness 
+    float lambertian = max(dot(L, normal), 0.0);
+    if(lambertian > 0.0)
+    {
+        // Specular
+        vec3 viewDir = normalize(camera_pos - frag_pos_world);
+        vec3 halfDir = normalize(L + viewDir);
+        float specAngle = max(dot(halfDir, normal), 0.0);
+        float specular = pow(specAngle, 36.0) * .2f;  
 
-} 
+        // Final lighting calculation: diffuse + specular
+        illuminance += 1.0f * spotEffect * (lambertian * diffuse.rgb + specular);
+    }
+
+    color =  vec4(illuminance, diffuse.a);
+}

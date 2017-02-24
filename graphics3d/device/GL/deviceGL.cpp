@@ -17,16 +17,15 @@ void APIENTRY DebugCB(GLenum source, GLenum type, GLuint id, GLenum severity, GL
     {
         if (type == GL_DEBUG_TYPE_PERFORMANCE)
         {
-            std::cout << "GLPerfError: " << message;
+            LOG(INFO) << "GLPerf: " << message;
         }
         else if (type == GL_DEBUG_TYPE_ERROR)
         {
-            std::cout << "GLError: " << message;
-            //DebugBreak();
+            LOG(ERROR) << "GL: " << message;
         }
         else
         {
-            std::cout << "GLError: " << message;
+            LOG(WARNING) << "GL: " << message;
         }
     }
 }
@@ -79,12 +78,15 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
     ModelMatrixID = glGetUniformLocation(programID, "M");
 
     // Get a handle for our "myTextureSampler" uniform
-    TextureID = glGetUniformLocation(programID, "myTextureSampler");
-    TextureIDBump = glGetUniformLocation(programID, "myTextureSamplerBump");
+    TextureID = glGetUniformLocation(programID, "albedo_sampler");
+    TextureIDBump = glGetUniformLocation(programID, "normal_sampler");
 
     // Get a handle for our "LightPosition" uniform
     glUseProgram(programID);
-    LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
+    CameraID = glGetUniformLocation(programID, "camera_pos");
+    LightDirID = glGetUniformLocation(programID, "light_dir");
+
+    HasNormalMapID = glGetUniformLocation(programID, "has_normalmap");
 
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
@@ -135,7 +137,6 @@ void DeviceGL::DestroyDeviceMesh(GLMesh* pDeviceMesh)
         glDeleteBuffers(1, &spGLPart->positionID);
         glDeleteBuffers(1, &spGLPart->uvID);
     }
-
 }
 
 uint32_t DeviceGL::LoadTexture(std::string path)
@@ -207,15 +208,23 @@ std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
         CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->uvID));
         CHECK_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2)*spPart->UVs.size(), spPart->UVs.data(), GL_STATIC_DRAW));
 
-        auto& mat = pMesh->GetMaterials()[spPart->MaterialID];
-        if (!mat.diffuse_texname.empty())
+        if (spPart->MaterialID != -1)
         {
-            spGLPart->textureID = LoadTexture(mat.diffuse_texname);
-        }
+            auto& mat = pMesh->GetMaterials()[spPart->MaterialID];
+            if (!mat.diffuse_texname.empty())
+            {
+                spGLPart->textureID = LoadTexture(mat.diffuse_texname);
+            }
 
-        if (!mat.bump_texname.empty())
+            if (!mat.bump_texname.empty())
+            {
+                spGLPart->textureIDBump = LoadTexture(mat.bump_texname);
+            }
+        }
+        else
         {
-            spGLPart->textureIDBump = LoadTexture(mat.bump_texname);
+            spGLPart->textureID = 0;
+            spGLPart->textureIDBump = 0;
         }
         spDeviceMesh->m_glMeshParts[spPart.get()] = spGLPart;
     }
@@ -225,6 +234,8 @@ std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
 
 void DeviceGL::Draw(Mesh* pMesh)
 {
+    static std::vector<Mesh*> alphaMeshes;
+
     GLMesh* pDeviceMesh = nullptr;
     auto itrFound = m_mapDeviceMeshes.find(pMesh);
     if (itrFound == m_mapDeviceMeshes.end())
@@ -268,10 +279,12 @@ void DeviceGL::Draw(Mesh* pMesh)
         CHECK_GL(glActiveTexture(GL_TEXTURE1));
         if (spGLPart->textureIDBump)
         {
+            glUniform1i(HasNormalMapID, 1);
             CHECK_GL(glBindTexture(GL_TEXTURE_2D, spGLPart->textureIDBump));
         }
         else
         {
+            glUniform1i(HasNormalMapID, 0);
             glBindTexture(GL_TEXTURE_2D, 0);
         }
         glDrawArrays(GL_TRIANGLES, 0, spGLPart->numVertices);
@@ -295,6 +308,8 @@ bool DeviceGL::Render()
     // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     auto& pCamera = m_spScene->GetCurrentCamera();
     if (pCamera)
     {
@@ -315,16 +330,17 @@ bool DeviceGL::Render()
     glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &model[0][0]);
     glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &view[0][0]);
 
-    glm::vec3 lightPos = glm::vec3(4, 4, 4);
-    glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
+    glm::vec3 cameraPos = pCamera->GetPosition();
+    glm::vec3 cameraLook = pCamera->GetViewDirection();
+
+    glUniform3f(CameraID, cameraPos.x, cameraPos.y, cameraPos.z);
+    glUniform3f(LightDirID, cameraLook.x, cameraLook.y, cameraLook.z);
 
     // Bind our texture in Texture Unit 0
     glActiveTexture(GL_TEXTURE0);
-    // Set our "myTextureSampler" sampler to user Texture Unit 0
     glUniform1i(TextureID, 0);
 
     glActiveTexture(GL_TEXTURE1);
-    // Set our "myTextureSamplerSpecular" sampler to user Texture Unit 1
     glUniform1i(TextureIDBump, 1);
 
     m_spScene->Render(this);
@@ -339,8 +355,6 @@ void DeviceGL::Cleanup()
     DestroyDeviceMeshes();
 
     glDeleteVertexArrays(1, &VertexArrayID);
-
-
     glDeleteProgram(programID);
 
     // Cleanup
@@ -364,36 +378,3 @@ void DeviceGL::Swap()
 {
     SDL_GL_SwapWindow(pWindow);
 }
-
-#if false 
-inline char* GetShaderLogInfo(GLuint shader) {
-    GLint len;
-    GLsizei actualLen;
-    GL_C(glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len));
-    char* infoLog = new char[len];
-    GL_C(glGetShaderInfoLog(shader, len, &actualLen, infoLog));
-    return infoLog;
-}
-
-GLuint LoadTexture(const char* file) {
-    std::vector<unsigned char> buffer;
-    lodepng::load_file(buffer, file);
-
-    lodepng::State state;
-    unsigned int width, height;
-    std::vector<unsigned char> imageData;
-    unsigned error = lodepng::decode(imageData, width, height, state, buffer);
-
-    if (error != 0) {
-        printf("Could not load texture %s: %s\n", file, lodepng_error_text(error));
-    }
-
-    GLuint tex;
-    GL_C(glGenTextures(1, &tex));
-    GL_C(glBindTexture(GL_TEXTURE_2D, tex));
-    GL_C(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData.data()));
-
-    return tex;
-}
-
-#endif

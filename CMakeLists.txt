@@ -6,6 +6,7 @@ SET (CMAKE_MODULE_PATH
 )
 
 INCLUDE(copy_files)
+INCLUDE(precomp)
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
   set(ARCH_64 TRUE)
@@ -46,13 +47,12 @@ SET(IMGUI_SOURCES
 
 SET(GRAPHICS3D_CAMERA_SOURCES
     graphics3d/camera/camera.h
+    graphics3d/camera/camera.cpp
 )
 
 SET(GRAPHICS3D_GEOMETRY_SOURCES
     graphics3d/geometry/indexer.cpp
     graphics3d/geometry/indexer.h
-    graphics3d/geometry/objloader.cpp
-    graphics3d/geometry/objloader.h
     graphics3d/geometry/tangentspace.cpp
     graphics3d/geometry/tangentspace.h
 )
@@ -75,10 +75,13 @@ SET(HOST_SOURCES
 
 SET(COMMON_SOURCES
     common/common.h
+    common/common.cpp
     common/mathutils.h
     common/mathutils.cpp
     common/fileutils.cpp
     common/fileutils.h
+
+    lib/easylogging/src/easylogging++.cc
 )
 
 FILE(GLOB_RECURSE ASSETS_SHADERS assets/*.fragmentshader assets/*.vertexshader)
@@ -107,6 +110,7 @@ SET(SOURCES
     ${APP_SOURCES}
     )
 
+ADD_MSVC_PRECOMPILED_HEADER()
 
 INCLUDE_DIRECTORIES(imgui
     lib/sdl
