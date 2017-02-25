@@ -23,6 +23,14 @@ bool Mesh::Load(const char* pszModel)
         return false;
     }
 
+    // Note:
+    // In this demo I am building lists of triangles for each part of the mesh that has a different material.
+    // A further optimization is to index the triangles.
+    // This saves bandwidth when sending geometry, and memory space.
+    // It makes things a bit more complicated though, because you have to build index lists based on material/vertex groups,
+    // as well as sending them to the card.
+    // And on modern devices, your geometry bandwidth may not be the most costly thing.
+    // Indexing geometry could be considered premature optimization, and is easy low-hanging fruit if you need to do it!
     std::shared_ptr<MeshPart> spPart;
     for (auto& shape : m_shapes)
     {

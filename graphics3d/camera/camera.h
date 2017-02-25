@@ -24,8 +24,8 @@ public:
     void SetFieldOfView(float fov) { fieldOfView = fov; }
     float GetFieldOfView() const { return fieldOfView; }
 
-    // Called before render to setup the camera correctly
-    bool PreRender();
+    // Called to update the camera state for a given window area
+    bool Update(SDL_Window* pWindow);
 
     // Calculated matrices
     glm::mat4 GetLookAt() const;

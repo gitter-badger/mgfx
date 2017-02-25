@@ -35,7 +35,6 @@ class DeviceGL : public IDevice
 public:
     DeviceGL();
     virtual bool Init(std::shared_ptr<Scene>& spScene) override;
-    virtual bool PreRender() override;
     virtual bool Render() override;
     virtual void Prepare2D() override;
     virtual void Cleanup() override;

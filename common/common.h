@@ -17,6 +17,7 @@
 // IO
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 
 // Include GLM Math library
 #include <glm/glm.hpp>

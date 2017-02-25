@@ -8,6 +8,7 @@
 #include "scene/scene.h"
 #include "scene/mesh.h"
 #include "ui/manipulator.h"
+#include "ui/window.h"
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -19,6 +20,7 @@ int main(int, char**)
         LOG(ERROR) << SDL_GetError();
         return -1;
     }
+
 
     // Create a simple scene
     // It contains a camera
@@ -35,13 +37,6 @@ int main(int, char**)
     // Create a manipulator to move the camera
     auto pManipulator = std::make_shared<Manipulator>(pCamera);
 
-    // The 3D Device
-    auto pDevice = std::static_pointer_cast<IDevice>(std::make_shared<DeviceGL>());
-    if (!pDevice->Init(spScene))
-    {
-        return -1;
-    }
-
     // The app's 2D UI
     RenderUI renderUI;
     if (!renderUI.Init(spScene))
@@ -49,44 +44,65 @@ int main(int, char**)
         return -1;
     }
 
+    Window windowManager;
+
+    // OpenGL
+    auto pDevice = std::static_pointer_cast<IDevice>(std::make_shared<DeviceGL>());
+    if (pDevice->Init(spScene))
+    {
+        windowManager.AddWindow(pDevice->GetWindow(), pDevice);
+    }
+
+    pDevice = std::static_pointer_cast<IDevice>(std::make_shared<DeviceGL>());
+    if (pDevice->Init(spScene))
+    {
+        windowManager.AddWindow(pDevice->GetWindow(), pDevice);
+    }
     // Main loop
     bool done = false;
     while (!done)
     {
-        SDL_Event event;
-        while  (SDL_PollEvent(&event))
-        {
-            pDevice->ProcessEvent(event);
-            if (event.type == SDL_QUIT)
-            {
-                done = true;
-            }
+        windowManager.HandleEvents(done);
 
-            if (!ImGui::GetIO().WantCaptureMouse)
-            {
-                // Tell the manipulator any events it might need for moving the camera
-                pManipulator->ProcessEvent(event);
-            }
+        /*if (!ImGui::GetIO().WantCaptureMouse)
+        {
+            // Tell the manipulator any events it might need for moving the camera
+            pManipulator->ProcessEvent(event);
         }
+        */
 
         pManipulator->Update();
 
-        // Draw the3D content
-        if (pDevice->PreRender())
+        for (auto& window : windowManager.GetWindows())
         {
-            // 3D Rendering of the scene
-            pDevice->Render();
+            windowManager.UpdateIMGUI(window.first);
 
-            // 2D UI
-            pDevice->Prepare2D();
-            renderUI.Render();
+            if (window.second.spDevice)
+            {
+                pCamera->Update(window.first);
 
-            // Display result
-            pDevice->Swap();
+                // 3D Rendering of the scene
+                window.second.spDevice->Render();
+
+                // 2D UI
+                window.second.spDevice->Prepare2D();
+
+                renderUI.Render();
+
+                // Display result
+                window.second.spDevice->Swap();
+            }
         }
     }
 
-    pDevice->Cleanup();
+
+    for (auto& window : windowManager.GetWindows())
+    {
+        if (window.second.spDevice)
+        {
+            window.second.spDevice->Cleanup();
+        }
+    }
 
     SDL_Quit();
 

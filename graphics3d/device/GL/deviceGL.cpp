@@ -98,23 +98,10 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
     return true;
 }
 
-bool DeviceGL::PreRender()
-{
-    int x, y;
-    SDL_GetWindowSize(pWindow, &x, &y);
-
-    auto pCamera = m_spScene->GetCurrentCamera();
-    if (pCamera)
-    {
-        pCamera->SetFilmSize(glm::uvec2(x, y));
-        pCamera->PreRender();
-    }
-
-    return true;
-}
-
 void DeviceGL::DestroyDeviceMeshes()
 {
+    SDL_GL_MakeCurrent(pWindow, glContext);
+
     for (auto& spMesh : m_mapDeviceMeshes)
     {
         DestroyDeviceMesh(spMesh.second.get());
@@ -130,6 +117,7 @@ void DeviceGL::DestroyDeviceMeshes()
 
 void DeviceGL::DestroyDeviceMesh(GLMesh* pDeviceMesh)
 {
+    SDL_GL_MakeCurrent(pWindow, glContext);
     for (auto& indexPart : pDeviceMesh->m_glMeshParts)
     {
         auto& spGLPart = indexPart.second;
@@ -141,6 +129,7 @@ void DeviceGL::DestroyDeviceMesh(GLMesh* pDeviceMesh)
 
 uint32_t DeviceGL::LoadTexture(std::string path)
 {
+    SDL_GL_MakeCurrent(pWindow, glContext);
     auto itr = m_mapTexToID.find(path);
     if (itr == m_mapTexToID.end())
     {
@@ -189,6 +178,7 @@ uint32_t DeviceGL::LoadTexture(std::string path)
 
 std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
 {
+    SDL_GL_MakeCurrent(pWindow, glContext);
     auto spDeviceMesh = std::make_shared<GLMesh>();
 
     for (auto& spPart : pMesh->GetMeshParts())
@@ -297,6 +287,7 @@ void DeviceGL::Draw(Mesh* pMesh)
 
 bool DeviceGL::Render()
 {
+    SDL_GL_MakeCurrent(pWindow, glContext);
     if (!m_spScene)
     {
         return true;
@@ -350,6 +341,8 @@ bool DeviceGL::Render()
 
 void DeviceGL::Cleanup()
 {
+    SDL_GL_MakeCurrent(pWindow, glContext);
+
     ImGui_ImplSdlGL3_Shutdown();
 
     DestroyDeviceMeshes();
@@ -364,6 +357,7 @@ void DeviceGL::Cleanup()
 
 void DeviceGL::Prepare2D()
 {
+    SDL_GL_MakeCurrent(pWindow, glContext);
     ImGui_ImplSdlGL3_NewFrame(pWindow);
 
     glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
@@ -371,10 +365,12 @@ void DeviceGL::Prepare2D()
 
 void DeviceGL::ProcessEvent(SDL_Event& event)
 {
+    SDL_GL_MakeCurrent(pWindow, glContext);
     ImGui_ImplSdlGL3_ProcessEvent(&event);
 }
 
 void DeviceGL::Swap()
 {
+    SDL_GL_MakeCurrent(pWindow, glContext);
     SDL_GL_SwapWindow(pWindow);
 }

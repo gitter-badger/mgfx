@@ -51,8 +51,15 @@ void Camera::SetFilmSize(const glm::uvec2& size)
 }
 
 
-bool Camera::PreRender()
+bool Camera::Update(SDL_Window* pWindow)
 {
+    int x, y;
+    SDL_GetWindowSize(pWindow, &x, &y);
+    if (filmSize.x != x || filmSize.y != y)
+    {
+        SetFilmSize(glm::uvec2(x, y));
+    }
+
     // The half-width of the viewport, in world space
     halfAngle = float(tan(glm::radians(fieldOfView) / 2.0));
 

@@ -1,6 +1,7 @@
 #include "common.h"
 #include "manipulator.h"
 
+// This simple manipulator processes events and moves a camera.
 void Manipulator::ProcessEvent(SDL_Event& event)
 {
     if (event.type == SDL_MOUSEBUTTONDOWN)
