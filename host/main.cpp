@@ -9,18 +9,18 @@
 #include "scene/mesh.h"
 #include "ui/manipulator.h"
 #include "ui/windowmanager.h"
+#include "ui/window.h"
 
 INITIALIZE_EASYLOGGINGPP
 
 int main(int, char**)
 {
     // Setup SDL
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) 
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
     {
         LOG(ERROR) << SDL_GetError();
         return -1;
     }
-
 
     // Create a simple scene
     auto spScene = std::make_shared<Scene>();
@@ -37,21 +37,21 @@ int main(int, char**)
         return -1;
     }
 
-    WindowManager windowManager(spScene);
+    WindowManager windowManager;
 
     // OpenGL
     auto pDevice = std::static_pointer_cast<IDevice>(std::make_shared<DeviceGL>());
     if (pDevice->Init(spScene))
     {
         windowManager.AddWindow(pDevice->GetWindow(), pDevice);
-        windowManager.GetWindowData(pDevice->GetWindow()).spCamera->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
+        windowManager.GetWindow(pDevice->GetWindow()).spCamera->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
     }
 
     pDevice = std::static_pointer_cast<IDevice>(std::make_shared<DeviceGL>());
     if (pDevice->Init(spScene))
     {
         windowManager.AddWindow(pDevice->GetWindow(), pDevice);
-        windowManager.GetWindowData(pDevice->GetWindow()).spCamera->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
+        windowManager.GetWindow(pDevice->GetWindow()).spCamera->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
     }
 
     // Main loop
@@ -64,17 +64,17 @@ int main(int, char**)
         {
             windowManager.Update(window.first);
 
-            if (window.second.spDevice)
+            if (window.second->GetDevice())
             {
                 // 3D Rendering of the scene
-                window.second.spDevice->Render(window.second);
+                window.second->GetDevice()->Render(window.first);
 
                 // 2D UI
                 //window.second.spDevice->Prepare2D();
                 //renderUI.Render();
 
                 // Display result
-                window.second.spDevice->Swap();
+                window.second->GetDevice()->Swap();
             }
         }
     }
@@ -82,9 +82,9 @@ int main(int, char**)
 
     for (auto& window : windowManager.GetWindows())
     {
-        if (window.second.spDevice)
+        if (window.second->GetDevice())
         {
-            window.second.spDevice->Cleanup();
+            window.second->GetDevice()->Cleanup();
         }
     }
 

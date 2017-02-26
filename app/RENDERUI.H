@@ -2,13 +2,14 @@
 
 class Camera;
 class Scene;
+class Window;
 struct WindowData;
 
 class RenderUI
 {
 public:
     bool Init(std::shared_ptr<Scene>& spScene);
-    bool Render(WindowData& window);
+    bool Render(Window* pWindow);
 
 private:
     std::shared_ptr<Scene> m_spScene;

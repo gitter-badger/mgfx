@@ -1,51 +1,80 @@
 #include "common.h"
-#include "windowmanager.h"
+#include "ui/windowmanager.h"
+#include "ui/window.h"
 #include "IDevice.h"
 #include "camera/camera.h"
 #include "ui/manipulator.h"
 
-WindowManager::WindowManager(std::shared_ptr<Scene>& spScene)
-    : spScene(spScene)
+WindowManager::WindowManager()
 {
 
 }
 
-WindowData& WindowManager::GetWindowData(SDL_Window* pWindow)
+Window* WindowManager::GetWindow(SDL_Window* pWindow)
 {
-    return mapWindowToData[pWindow];
+    auto itrFound = mapSDLToWindow.find(pWindow);
+    if (itrFound != mapSDLToWindow.end())
+    {
+        return itrFound->second.get();
+    }
+    return nullptr;
 }
 
-void WindowManager::AddWindow(SDL_Window* pWindow, std::shared_ptr<IDevice> spDevice)
+SDL_Window* WindowManager::GetSDLWindow(Window* pWindow)
 {
-    WindowData data;
-    data.spDevice = spDevice;
-    data.lastTime = 0;
-    data.spCamera = std::make_shared<Camera>();
-    data.spManipulator = std::make_shared<Manipulator>(data.spCamera);
-    mapWindowToData[pWindow] = data;
+    auto itrFound = mapWindowToSDL.find(pWindow);
+    if (itrFound != mapWindowToSDL.end())
+    {
+        return itrFound->second;
+    }
+    return nullptr;
 }
 
-void WindowManager::RemoveWindow(SDL_Window* pWindow)
+Window* WindowManager::AddWindow(SDL_Window* pWindow, std::shared_ptr<IDevice> spDevice)
 {
-    mapWindowToData.erase(pWindow);
+    auto spWindow = std::make_shared<Window>(spDevice);
+    spWindow->SetCamera(std::make_shared<Camera>());
+    spWindow->SetManipulator(std::make_shared<Manipulator>(spWindow->GetCamera()));
+    mapSDLToWindow[pWindow] = spWindow;
+    mapWindowToSDL[spWindow.get()] = pWindow;
 }
 
-glm::ivec4 WindowManager::GetSDLWindowRect(SDL_Window* pWindow)
+void WindowManager::RemoveWindow(Window* pWindow)
+{
+    mapWindowToSDL.erase(pWindow);
+    for (auto& win : mapSDLToWindow)
+    {
+        if (win.second.get() == pWindow)
+        {
+            mapSDLToWindow.erase(win.first);
+        }
+    }
+}
+
+glm::ivec4 WindowManager::GetWindowRect(Window* pWindow)
 {
     glm::ivec4 rect;
-    SDL_GetWindowSize(pWindow, &rect.z, &rect.w);
-    SDL_GetWindowPosition(pWindow, &rect.x, &rect.y);
+    SDL_Window* pSDLWindow = GetSDLWindow(pWindow);
+    if (!pSDLWindow)
+    {
+        return glm::ivec4(0);
+    }
+    SDL_GetWindowSize(pSDLWindow, &rect.z, &rect.w);
+    SDL_GetWindowPosition(pSDLWindow, &rect.x, &rect.y);
     return rect;
 }
 
-void WindowManager::Update(SDL_Window* pWindow)
+void WindowManager::Update(Window* pWindow)
 {
     auto& io = ImGui::GetIO();
-    auto& windowData = GetWindowData(pWindow);
-   
-
+    auto pSDLWindow = GetSDLWindow(pWindow);
+    if (!pSDLWindow)
+    {
+        return;
+    }
+        
     glm::ivec2 size;
-    SDL_GetWindowSize(pWindow, &size.x, &size.y);
+    SDL_GetWindowSize(pSDLWindow, &size.x, &size.y);
 
     // Setup display size (every frame to accommodate for window resizing)
     io.DisplaySize = ImVec2(float(size.x), float(size.y));
@@ -53,14 +82,14 @@ void WindowManager::Update(SDL_Window* pWindow)
     // Setup time step
     Uint32	time = SDL_GetTicks();
     double current_time = time / 1000.0;
-    io.DeltaTime = windowData.lastTime > 0.0 ? (float)(current_time - windowData.lastTime) : 0.0f;
-    windowData.lastTime = current_time;
+    io.DeltaTime = pWindow->GetUpdateTime() > 0.0 ? (float)(current_time - pWindow->GetUpdateTime()) : 0.0f;
+    pWindow->SetUpdateTime(current_time);
 
     // Setup inputs
     // (we already got mouse wheel, keyboard keys & characters from glfw callbacks polled in glfwPollEvents())
     int mx, my;
     Uint32 mouseMask = SDL_GetMouseState(&mx, &my);
-    if (SDL_GetWindowFlags(pWindow) & SDL_WINDOW_MOUSE_FOCUS)
+    if (SDL_GetWindowFlags(pSDLWindow) & SDL_WINDOW_MOUSE_FOCUS)
         io.MousePos = ImVec2((float)mx, (float)my);   // Mouse position, in pixels (set to -1,-1 if no mouse / on another screen, etc.)
     else
         io.MousePos = ImVec2(-1, -1);
@@ -76,18 +105,18 @@ void WindowManager::Update(SDL_Window* pWindow)
     // Hide OS mouse cursor if ImGui is drawing it
     SDL_ShowCursor(io.MouseDrawCursor ? 0 : 1);
    
-    if (windowData.spManipulator)
+    if (pWindow->GetManipulator())
     {
-        windowData.spManipulator->Update();
+        pWindow->GetManipulator()->Update();
     }
 
-    if (windowData.spCamera)
+    if (pWindow->GetCamera())
     {
-        windowData.spCamera->Update(pWindow);
+        pWindow->GetCamera()->Update(pWindow);
     }
 }
 
-SDL_Window* WindowManager::GetWindowFromEvent(SDL_Event& e)
+SDL_Window* WindowManager::GetSDLWindowFromEvent(SDL_Event& e)
 {
     switch (e.type)
     {
@@ -107,9 +136,9 @@ SDL_Window* WindowManager::GetWindowFromEvent(SDL_Event& e)
     case SDL_FINGERUP:
     case SDL_FINGERMOTION:
     {
-        for (auto sdlWindow : mapWindowToData)
+        for (auto sdlWindow : mapSDLToWindow)
         {
-            auto rect = GetSDLWindowRect(sdlWindow.first);
+            auto rect = GetWindowRect(sdlWindow.second.get());
             auto pos = glm::ivec2(e.tfinger.x, e.tfinger.y);
             pos.x *= rect.z;
             pos.y *= rect.w;
@@ -135,18 +164,21 @@ void WindowManager::HandleEvents(bool& quit)
     SDL_Event e;
     while (SDL_PollEvent(&e))
     {
-        auto pWindow = GetWindowFromEvent(e);
-        auto& windowData = GetWindowData(pWindow);
+        auto pSDLWindow = GetSDLWindowFromEvent(e);
+        auto pWindow = GetWindow(pSDLWindow);
 
-        if (windowData.spDevice)
+        if (pWindow->GetDevice())
         {
-            windowData.spDevice->ProcessEvent(e);
+            pWindow->GetDevice()->ProcessEvent(e);
         }
 
         if (!ImGui::GetIO().WantCaptureMouse)
         {
             // Tell the manipulator any events it might need for moving the camera
-            windowData.spManipulator->ProcessEvent(e);
+            if (pWindow->GetManipulator())
+            {
+                pWindow->GetManipulator()->ProcessEvent(e);
+            }
         }
 
         if (e.type == SDL_QUIT)
@@ -173,15 +205,6 @@ void WindowManager::HandleEvents(bool& quit)
                     break;
                 }
             }
-        }
-        break;
-
-        case SDL_MOUSEWHEEL:
-        {
-            if (e.wheel.y > 0)
-                windowData.mouseWheel = 1;
-            if (e.wheel.y < 0)
-                windowData.mouseWheel = -1;
         }
         break;
 

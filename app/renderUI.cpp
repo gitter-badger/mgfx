@@ -3,6 +3,7 @@
 #include "camera/camera.h"
 #include "scene/scene.h"
 #include "ui/windowmanager.h"
+#include "ui/window.h"
 
 bool RenderUI::Init(std::shared_ptr<Scene>& spScene)
 {
@@ -10,7 +11,7 @@ bool RenderUI::Init(std::shared_ptr<Scene>& spScene)
     return true;
 }
 
-bool RenderUI::Render(WindowData& windowData)
+bool RenderUI::Render(Window* pWindow)
 {
     if (!m_spScene)
     {
@@ -20,7 +21,7 @@ bool RenderUI::Render(WindowData& windowData)
     static bool show_test_window = false;
 
     ImVec4 clear_color = m_spScene->GetClearColor();
-    auto pCamera = windowData.spCamera;
+    auto pCamera = pWindow->GetCamera();
 
     if (pCamera)
     {

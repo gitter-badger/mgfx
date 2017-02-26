@@ -38,11 +38,18 @@ SET(GRAPHICS3D_DEVICEGL_SOURCES
     graphics3d/device/GL/imgui_impl_sdl_gl3.h
 )
 
-SET(IMGUI_SOURCES
+SET(GRAPHICS2D_IMGUI_SOURCES
     graphics2d/imgui/imgui.cpp
     graphics2d/imgui/imgui_draw.cpp
     graphics2d/imgui/imgui_demo.cpp
     graphics2d/imgui/imgui_orient.cpp
+)
+
+SET(GRAPHICS2D_UI_SOURCES
+    graphics2d/ui/windowmanager.cpp
+    graphics2d/ui/windowmanager.h
+    graphics2d/ui/window.cpp
+    graphics2d/ui/window.h
 )
 
 SET(GRAPHICS3D_CAMERA_SOURCES
@@ -60,8 +67,6 @@ SET(GRAPHICS3D_GEOMETRY_SOURCES
 SET(GRAPHICS3D_UI_SOURCES
     graphics3d/ui/manipulator.h
     graphics3d/ui/manipulator.cpp
-    graphics3d/ui/windowmanager.h
-    graphics3d/ui/windowmanager.cpp
 )
 
 SET(GRAPHICS3D_SCENE_SOURCES
@@ -100,7 +105,8 @@ ${ASSETS_MODELS}
 SET(SOURCES
     ${COMMON_SOURCES}
     ${ASSETS}
-    ${IMGUI_SOURCES}
+    ${GRAPHICS2D_IMGUI_SOURCES}
+    ${GRAPHICS2D_UI_SOURCES}
     ${GRAPHICS3D_CAMERA_SOURCES}
     ${GRAPHICS3D_GEOMETRY_SOURCES}
     ${GRAPHICS3D_UI_SOURCES}
@@ -146,7 +152,8 @@ add_custom_target(copy-assets ALL
 
 SOURCE_GROUP(2D)
 SOURCE_GROUP(3D)
-SOURCE_GROUP (2D\\ImGui FILES ${IMGUI_SOURCES})
+SOURCE_GROUP (2D\\ImGui FILES ${GRAPHICS2D_IMGUI_SOURCES})
+SOURCE_GROUP (2D\\UI FILES ${GRAPHICS2D_UI_SOURCES})
 SOURCE_GROUP (3D\\Geometry FILES ${GRAPHICS3D_GEOMETRY_SOURCES})
 SOURCE_GROUP (3D\\Camera FILES ${GRAPHICS3D_CAMERA_SOURCES})
 SOURCE_GROUP (3D\\UI FILES ${GRAPHICS3D_UI_SOURCES})

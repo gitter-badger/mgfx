@@ -11,6 +11,7 @@
 class Camera;
 class Mesh;
 class Scene;
+class Window;
 struct WindowData;
 struct MeshPart;
 
@@ -37,7 +38,7 @@ class DeviceGL : public IDevice
 public:
     DeviceGL();
     virtual bool Init(std::shared_ptr<Scene>& spScene) override;
-    virtual bool Render(WindowData& window) override;
+    virtual bool Render(Window* pWindow) override;
     virtual void Prepare2D() override;
     virtual void Cleanup() override;
     virtual void ProcessEvent(SDL_Event& event) override;
