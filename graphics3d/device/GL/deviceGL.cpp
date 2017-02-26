@@ -22,6 +22,7 @@ void APIENTRY DebugCB(GLenum source, GLenum type, GLuint id, GLenum severity, GL
         else if (type == GL_DEBUG_TYPE_ERROR)
         {
             LOG(ERROR) << "GL: " << message;
+            DebugBreak();
         }
         else
         {
@@ -51,8 +52,14 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
     SDL_GetCurrentDisplayMode(0, &current);
     pWindow = SDL_CreateWindow("GLShell", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     glContext = SDL_GL_CreateContext(pWindow);
+    SDL_GL_MakeCurrent(pWindow, glContext);
 
-    gl3wInit();
+    static bool initOnce = false;
+    if (!initOnce)
+    {
+        gl3wInit();
+        initOnce = true;
+    }
 
     // Get useful debug messages
     CHECK_GL(glDebugMessageCallback((GLDEBUGPROC)&DebugCB, this));
@@ -72,6 +79,9 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders(GetMediaPath("shaders/GL/StandardShading.vertexshader").c_str(), GetMediaPath("shaders/GL/StandardShading.fragmentshader").c_str());
 
+    // Get a handle for our "LightPosition" uniform
+    glUseProgram(programID);
+
     // Get a handle for our "MVP" uniform
     MatrixID = glGetUniformLocation(programID, "MVP");
     ViewMatrixID = glGetUniformLocation(programID, "V");
@@ -81,8 +91,6 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
     TextureID = glGetUniformLocation(programID, "albedo_sampler");
     TextureIDBump = glGetUniformLocation(programID, "normal_sampler");
 
-    // Get a handle for our "LightPosition" uniform
-    glUseProgram(programID);
     CameraID = glGetUniformLocation(programID, "camera_pos");
     LightDirID = glGetUniformLocation(programID, "light_dir");
 
@@ -181,6 +189,8 @@ std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
     SDL_GL_MakeCurrent(pWindow, glContext);
     auto spDeviceMesh = std::make_shared<GLMesh>();
 
+    glBindVertexArray(VertexArrayID);
+
     for (auto& spPart : pMesh->GetMeshParts())
     {
         auto spGLPart = std::make_shared<GLMeshPart>();
@@ -238,6 +248,8 @@ void DeviceGL::Draw(Mesh* pMesh)
     {
         pDeviceMesh = itrFound->second.get();
     }
+
+    glBindVertexArray(VertexArrayID);
 
     for (auto& indexPart : pDeviceMesh->m_glMeshParts)
     {
@@ -308,7 +320,7 @@ bool DeviceGL::Render()
     }
 
     // Use our shader
-    glUseProgram(programID);
+    CHECK_GL(glUseProgram(programID));
 
     glm::mat4 projection = pCamera->GetProjection();
     glm::mat4 view = pCamera->GetLookAt();
@@ -317,7 +329,7 @@ bool DeviceGL::Render()
 
     // Send our transformation to the currently bound shader, 
     // in the "MVP" uniform
-    glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+    CHECK_GL(glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]));
     glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &model[0][0]);
     glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &view[0][0]);
 

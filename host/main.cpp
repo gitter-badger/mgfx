@@ -85,9 +85,8 @@ int main(int, char**)
                 window.second.spDevice->Render();
 
                 // 2D UI
-                window.second.spDevice->Prepare2D();
-
-                renderUI.Render();
+                //window.second.spDevice->Prepare2D();
+                //renderUI.Render();
 
                 // Display result
                 window.second.spDevice->Swap();
