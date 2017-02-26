@@ -3,6 +3,7 @@
 #include "camera/camera.h"
 #include "scene/scene.h"
 #include "scene/mesh.h"
+#include "ui/windowmanager.h"
 #include "fileutils.h"
 
 #include <iostream>
@@ -297,7 +298,7 @@ void DeviceGL::Draw(Mesh* pMesh)
     glDisableVertexAttribArray(2);
 }
 
-bool DeviceGL::Render()
+bool DeviceGL::Render(WindowData& window)
 {
     SDL_GL_MakeCurrent(pWindow, glContext);
     if (!m_spScene)
@@ -313,7 +314,8 @@ bool DeviceGL::Render()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    auto& pCamera = m_spScene->GetCurrentCamera();
+
+    auto& pCamera = window.spCamera;
     if (pCamera)
     {
         glViewport(0, 0, pCamera->GetFilmSize().x, pCamera->GetFilmSize().y);

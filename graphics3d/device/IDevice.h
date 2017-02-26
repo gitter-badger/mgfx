@@ -2,11 +2,12 @@
 
 class Scene;
 class Mesh;
+struct WindowData;
 
 struct IDevice
 {
     virtual bool Init(std::shared_ptr<Scene>& spScene) = 0;
-    virtual bool Render() = 0;
+    virtual bool Render(WindowData& window) = 0;
     virtual void Prepare2D() = 0;
     virtual void Cleanup() = 0;
     virtual void ProcessEvent(SDL_Event& event) = 0;

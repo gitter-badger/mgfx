@@ -8,7 +8,7 @@
 #include "scene/scene.h"
 #include "scene/mesh.h"
 #include "ui/manipulator.h"
-#include "ui/window.h"
+#include "ui/windowmanager.h"
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -23,19 +23,12 @@ int main(int, char**)
 
 
     // Create a simple scene
-    // It contains a camera
-    std::shared_ptr<Scene> spScene = std::make_shared<Scene>();
+    auto spScene = std::make_shared<Scene>();
     spScene->SetClearColor(glm::vec4(0.7f, .7f, .8f, 1.0f));
 
-    std::shared_ptr<Mesh> spMesh = std::make_shared<Mesh>();
+    auto spMesh = std::make_shared<Mesh>();
     spMesh->Load("models/sponza/sponza.obj");// sponza / sponza.obj");
     spScene->AddMesh(spMesh);
-
-    auto pCamera = spScene->GetCurrentCamera();
-    pCamera->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
-
-    // Create a manipulator to move the camera
-    auto pManipulator = std::make_shared<Manipulator>(pCamera);
 
     // The app's 2D UI
     RenderUI renderUI;
@@ -44,45 +37,37 @@ int main(int, char**)
         return -1;
     }
 
-    Window windowManager;
+    WindowManager windowManager(spScene);
 
     // OpenGL
     auto pDevice = std::static_pointer_cast<IDevice>(std::make_shared<DeviceGL>());
     if (pDevice->Init(spScene))
     {
         windowManager.AddWindow(pDevice->GetWindow(), pDevice);
+        windowManager.GetWindowData(pDevice->GetWindow()).spCamera->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
     }
 
     pDevice = std::static_pointer_cast<IDevice>(std::make_shared<DeviceGL>());
     if (pDevice->Init(spScene))
     {
         windowManager.AddWindow(pDevice->GetWindow(), pDevice);
+        windowManager.GetWindowData(pDevice->GetWindow()).spCamera->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
     }
+
     // Main loop
     bool done = false;
     while (!done)
     {
         windowManager.HandleEvents(done);
 
-        /*if (!ImGui::GetIO().WantCaptureMouse)
-        {
-            // Tell the manipulator any events it might need for moving the camera
-            pManipulator->ProcessEvent(event);
-        }
-        */
-
-        pManipulator->Update();
-
         for (auto& window : windowManager.GetWindows())
         {
-            windowManager.UpdateIMGUI(window.first);
+            windowManager.Update(window.first);
 
             if (window.second.spDevice)
             {
-                pCamera->Update(window.first);
-
                 // 3D Rendering of the scene
-                window.second.spDevice->Render();
+                window.second.spDevice->Render(window.second);
 
                 // 2D UI
                 //window.second.spDevice->Prepare2D();

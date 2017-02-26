@@ -60,6 +60,8 @@ SET(GRAPHICS3D_GEOMETRY_SOURCES
 SET(GRAPHICS3D_UI_SOURCES
     graphics3d/ui/manipulator.h
     graphics3d/ui/manipulator.cpp
+    graphics3d/ui/windowmanager.h
+    graphics3d/ui/windowmanager.cpp
 )
 
 SET(GRAPHICS3D_SCENE_SOURCES

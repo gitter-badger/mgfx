@@ -1,26 +1,36 @@
 #include "common.h"
-#include "window.h"
+#include "windowmanager.h"
 #include "IDevice.h"
+#include "camera/camera.h"
+#include "ui/manipulator.h"
 
-WindowData& Window::GetWindowData(SDL_Window* pWindow)
+WindowManager::WindowManager(std::shared_ptr<Scene>& spScene)
+    : spScene(spScene)
+{
+
+}
+
+WindowData& WindowManager::GetWindowData(SDL_Window* pWindow)
 {
     return mapWindowToData[pWindow];
 }
 
-void Window::AddWindow(SDL_Window* pWindow, std::shared_ptr<IDevice> spDevice)
+void WindowManager::AddWindow(SDL_Window* pWindow, std::shared_ptr<IDevice> spDevice)
 {
     WindowData data;
     data.spDevice = spDevice;
     data.lastTime = 0;
+    data.spCamera = std::make_shared<Camera>();
+    data.spManipulator = std::make_shared<Manipulator>(data.spCamera);
     mapWindowToData[pWindow] = data;
 }
 
-void Window::RemoveWindow(SDL_Window* pWindow)
+void WindowManager::RemoveWindow(SDL_Window* pWindow)
 {
     mapWindowToData.erase(pWindow);
 }
 
-glm::ivec4 Window::GetSDLWindowRect(SDL_Window* pWindow)
+glm::ivec4 WindowManager::GetSDLWindowRect(SDL_Window* pWindow)
 {
     glm::ivec4 rect;
     SDL_GetWindowSize(pWindow, &rect.z, &rect.w);
@@ -28,11 +38,12 @@ glm::ivec4 Window::GetSDLWindowRect(SDL_Window* pWindow)
     return rect;
 }
 
-void Window::UpdateIMGUI(SDL_Window* pWindow)
+void WindowManager::Update(SDL_Window* pWindow)
 {
     auto& io = ImGui::GetIO();
     auto& windowData = GetWindowData(pWindow);
-    
+   
+
     glm::ivec2 size;
     SDL_GetWindowSize(pWindow, &size.x, &size.y);
 
@@ -64,9 +75,19 @@ void Window::UpdateIMGUI(SDL_Window* pWindow)
 
     // Hide OS mouse cursor if ImGui is drawing it
     SDL_ShowCursor(io.MouseDrawCursor ? 0 : 1);
+   
+    if (windowData.spManipulator)
+    {
+        windowData.spManipulator->Update();
+    }
+
+    if (windowData.spCamera)
+    {
+        windowData.spCamera->Update(pWindow);
+    }
 }
 
-SDL_Window* Window::GetWindowFromEvent(SDL_Event& e)
+SDL_Window* WindowManager::GetWindowFromEvent(SDL_Event& e)
 {
     switch (e.type)
     {
@@ -107,7 +128,7 @@ SDL_Window* Window::GetWindowFromEvent(SDL_Event& e)
     return SDL_GL_GetCurrentWindow();
 }
 
-void Window::HandleEvents(bool& quit)
+void WindowManager::HandleEvents(bool& quit)
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -120,6 +141,12 @@ void Window::HandleEvents(bool& quit)
         if (windowData.spDevice)
         {
             windowData.spDevice->ProcessEvent(e);
+        }
+
+        if (!ImGui::GetIO().WantCaptureMouse)
+        {
+            // Tell the manipulator any events it might need for moving the camera
+            windowData.spManipulator->ProcessEvent(e);
         }
 
         if (e.type == SDL_QUIT)
