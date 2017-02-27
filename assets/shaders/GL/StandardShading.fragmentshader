@@ -12,6 +12,8 @@ uniform bool has_normalmap;
 // These values passed through from the vertex shader
 in vec3 frag_pos_world;
 in vec3 frag_normal;
+in vec3 frag_tangent;
+in vec3 frag_binormal;
 in vec2 frag_tex_coord;
 
 // The output color
@@ -45,7 +47,11 @@ void main()
     vec3 normal;
     if (has_normalmap)
     {
-        normal = applyNormalMap(frag_normal, texture(normal_sampler, frag_tex_coord).rgb);
+        mat3 tangentToWorld = mat3(normalize(frag_tangent),
+                                   normalize(frag_binormal),
+                                   normalize(frag_normal));
+        normal = normalize(texture(normal_sampler, frag_tex_coord).rgb * 2.0 - 1.0);
+        normal = normalize(tangentToWorld * normal);
     }
     else
     {
@@ -76,7 +82,7 @@ void main()
         vec3 viewDir = normalize(camera_pos - frag_pos_world);
         vec3 halfDir = normalize(L + viewDir);
         float specAngle = max(dot(halfDir, normal), 0.0);
-        float specular = pow(specAngle, 36.0) * .2f;  
+        float specular = pow(specAngle, 36.0) * .8f;  
 
         // Final lighting calculation: diffuse + specular
         illuminance += 1.0f * spotEffect * (lambertian * diffuse.rgb + specular);

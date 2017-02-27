@@ -3,6 +3,8 @@
 
 #define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
 #include "mesh.h"
+#include "geometry/tangentspace.h"
+#include "geometry/indexer.h"
 
 bool Mesh::Load(const char* pszModel)
 {
@@ -32,6 +34,25 @@ bool Mesh::Load(const char* pszModel)
     // And on modern devices, your geometry bandwidth may not be the most costly thing.
     // Indexing geometry could be considered premature optimization, and is easy low-hanging fruit if you need to do it!
     std::shared_ptr<MeshPart> spPart;
+
+    std::vector<glm::vec3> positions;
+    std::vector<glm::vec3> normals;
+    std::vector<glm::vec3> tangents;
+    std::vector<glm::vec3> binormals;
+    std::vector<glm::vec2> texCoords;
+
+    auto finishPart = [&](std::shared_ptr<MeshPart>& spPart)
+    {
+        // Compute the tangent and binormal vectors for the mesh (used in bump mapping)
+        computeTangentBasis(positions, texCoords, normals, tangents, binormals);
+
+        // Re-index the mesh part
+        indexVBO_TBN(positions, texCoords, normals, tangents, binormals,
+            spPart->Indices, spPart->Positions, spPart->UVs, spPart->Normals, spPart->Tangents, spPart->Binormals);
+
+        m_meshParts.push_back(spPart);
+    };
+
     for (auto& shape : m_shapes)
     {
         tinyobj::mesh_t& m = shape.mesh;
@@ -42,7 +63,7 @@ bool Mesh::Load(const char* pszModel)
             if (spPart &&
                 spPart->MaterialID != m.material_ids[j / 3])
             {
-                m_meshParts.push_back(spPart);
+                finishPart(spPart);
                 newPart = true;
             }
             
@@ -52,6 +73,12 @@ bool Mesh::Load(const char* pszModel)
                 spPart = std::make_shared<MeshPart>();
                 spPart->MaterialID = m.material_ids[j / 3];
                 spPart->PartName = shape.name;
+
+                positions.clear();
+                normals.clear();
+                tangents.clear();
+                binormals.clear();
+                texCoords.clear();
             }
 
             // Note: we ask for triangulation of the data
@@ -78,15 +105,15 @@ bool Mesh::Load(const char* pszModel)
                         m_attrib.texcoords[index.texcoord_index * 2 + 1]);
                 }
 
-                spPart->Positions.push_back(pos);
-                spPart->Normals.push_back(normal);
-                spPart->UVs.push_back(tex);
+                positions.push_back(pos);
+                normals.push_back(normal);
+                texCoords.push_back(tex);
             }
         }
 
         if (!newPart)
         {
-            m_meshParts.push_back(spPart);
+            finishPart(spPart);
         }
     }
     return true;

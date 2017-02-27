@@ -21,8 +21,11 @@ struct GLMeshPart
 {
     uint32_t positionID = 0;
     uint32_t normalID = 0;
+    uint32_t tangentID = 0;
+    uint32_t binormalID = 0;
     uint32_t uvID = 0;
-    uint32_t numVertices = 0;
+    uint32_t indicesID = 0;
+    uint32_t numIndices = 0;
     uint32_t textureID = 0;
     uint32_t textureIDBump = 0;
 };

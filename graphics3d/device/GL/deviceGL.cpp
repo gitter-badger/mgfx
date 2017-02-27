@@ -202,7 +202,6 @@ std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
     for (auto& spPart : pMesh->GetMeshParts())
     {
         auto spGLPart = std::make_shared<GLMeshPart>();
-        spGLPart->numVertices = uint32_t(spPart->Positions.size());
 
         CHECK_GL(glGenBuffers(1, &spGLPart->positionID));
         CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->positionID));
@@ -212,9 +211,23 @@ std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
         CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->normalID));
         CHECK_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*spPart->Normals.size(), spPart->Normals.data(), GL_STATIC_DRAW));
 
+        CHECK_GL(glGenBuffers(1, &spGLPart->tangentID));
+        CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->tangentID));
+        CHECK_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*spPart->Tangents.size(), spPart->Tangents.data(), GL_STATIC_DRAW));
+
+        CHECK_GL(glGenBuffers(1, &spGLPart->binormalID));
+        CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->binormalID));
+        CHECK_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*spPart->Binormals.size(), spPart->Binormals.data(), GL_STATIC_DRAW));
+
         CHECK_GL(glGenBuffers(1, &spGLPart->uvID));
         CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->uvID));
         CHECK_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2)*spPart->UVs.size(), spPart->UVs.data(), GL_STATIC_DRAW));
+
+        CHECK_GL(glGenBuffers(1, &spGLPart->indicesID));
+        CHECK_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, spGLPart->indicesID));
+        CHECK_GL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t)*spPart->Indices.size(), spPart->Indices.data(), GL_STATIC_DRAW));
+
+        spGLPart->numIndices = uint32_t(spPart->Indices.size());
 
         if (spPart->MaterialID != -1)
         {
@@ -273,8 +286,16 @@ void DeviceGL::Draw(Mesh* pMesh)
         CHECK_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0));
 
         CHECK_GL(glEnableVertexAttribArray(2));
+        CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->tangentID));
+        CHECK_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0));
+
+        CHECK_GL(glEnableVertexAttribArray(3));
+        CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->binormalID));
+        CHECK_GL(glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0));
+
+        CHECK_GL(glEnableVertexAttribArray(4));
         CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->uvID));
-        CHECK_GL(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0));
+        CHECK_GL(glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, 0, (void*)0));
 
         CHECK_GL(glActiveTexture(GL_TEXTURE0));
         if (spGLPart->textureID)
@@ -287,7 +308,7 @@ void DeviceGL::Draw(Mesh* pMesh)
         }
 
         CHECK_GL(glActiveTexture(GL_TEXTURE1));
-        if (false/*spGLPart->textureIDBump*/)
+        if (spGLPart->textureIDBump)
         {
             CHECK_GL(glUniform1i(HasNormalMapID, 1));
             CHECK_GL(glBindTexture(GL_TEXTURE_2D, spGLPart->textureIDBump));
@@ -297,7 +318,9 @@ void DeviceGL::Draw(Mesh* pMesh)
             CHECK_GL(glUniform1i(HasNormalMapID, 0));
             CHECK_GL(glBindTexture(GL_TEXTURE_2D, 0));
         }
-        CHECK_GL(glDrawArrays(GL_TRIANGLES, 0, spGLPart->numVertices));
+
+        CHECK_GL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, spGLPart->indicesID));
+        CHECK_GL(glDrawElements(GL_TRIANGLES, spGLPart->numIndices, GL_UNSIGNED_INT, (void*)0));
     }
 
     CHECK_GL(glDisableVertexAttribArray(0));
