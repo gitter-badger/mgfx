@@ -1,11 +1,15 @@
 #pragma once
 
 struct IDevice;
+
 class Camera;
 class Scene;
 class Manipulator;
 class Window;
 
+// The window manager manages a list of device windows, and maintains them based on 
+// SDL messages
+// This is a singleton
 class WindowManager
 {
 public:
@@ -18,12 +22,12 @@ public:
 
     Window* GetWindow(SDL_Window* pWindow);
 
-    void Update(Window* pWindow);
     glm::ivec4 GetWindowRect(Window* pWindow);
 
     std::map<SDL_Window*, std::shared_ptr<Window>>& GetWindows() { return mapSDLToWindow; }
+
 private:
-    WindowManager();
+    WindowManager() {}
 
     SDL_Window* GetSDLWindow(Window* pWindow);
     SDL_Window* GetSDLWindowFromEvent(SDL_Event& e);

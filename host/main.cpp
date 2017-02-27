@@ -13,6 +13,19 @@
 
 INITIALIZE_EASYLOGGINGPP
 
+std::shared_ptr<Scene> LoadScene()
+{
+    // Create a simple scene
+    auto spScene = std::make_shared<Scene>();
+    spScene->SetClearColor(glm::vec4(0.7f, .7f, .8f, 1.0f));
+
+    auto spMesh = std::make_shared<Mesh>();
+    spMesh->Load("models/sponza/sponza.obj");// sponza / sponza.obj");
+    spScene->AddMesh(spMesh);
+
+    return spScene;
+}
+
 int main(int, char**)
 {
     // Setup SDL
@@ -22,13 +35,7 @@ int main(int, char**)
         return -1;
     }
 
-    // Create a simple scene
-    auto spScene = std::make_shared<Scene>();
-    spScene->SetClearColor(glm::vec4(0.7f, .7f, .8f, 1.0f));
-
-    auto spMesh = std::make_shared<Mesh>();
-    spMesh->Load("models/sponza/sponza.obj");// sponza / sponza.obj");
-    spScene->AddMesh(spMesh);
+    auto spScene = LoadScene();
 
     // The app's 2D UI
     RenderUI renderUI;
@@ -46,6 +53,7 @@ int main(int, char**)
     }
     pDevice = nullptr;
 
+    /*
     pDevice = std::static_pointer_cast<IDevice>(std::make_shared<DeviceGL>());
     if (pDevice->Init(spScene))
     {
@@ -53,36 +61,41 @@ int main(int, char**)
         WindowManager::Instance().GetWindow(pDevice->GetWindow())->GetCamera()->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
     }
     pDevice = nullptr;
+    */
 
     // Main loop
     bool done = false;
     while (!done)
     {
+        // Have the window manager check all the events for the windows.
         WindowManager::Instance().HandleEvents(done);
 
-        for (auto& window : WindowManager::Instance().GetWindows())
+        // Walk the list of windows currently drawing
+        for (auto& windows : WindowManager::Instance().GetWindows())
         {
-            WindowManager::Instance().Update(window.second.get());
+            auto& spWindow = windows.second;
 
-            if (window.second->GetDevice())
-            {
-                spScene->SetCurrentCamera(window.second->GetCamera().get());
+            spWindow->PreRender();
 
-                // 3D Rendering of the scene
-                window.second->GetDevice()->Render();
+            // Draw the scene with this window's camera
+            spScene->SetCurrentCamera(spWindow->GetCamera().get());
 
-                // 2D UI
-                window.second->GetDevice()->Prepare2D();
-                renderUI.Render(window.second.get());
-                window.second->GetDevice()->Render2D();
+            // 3D Rendering of the scene
+            spWindow->GetDevice()->Render();
 
-                // Display result
-                window.second->GetDevice()->Swap();
-            }
+            // 2D UI
+            spWindow->GetDevice()->Prepare2D();
+
+            renderUI.Render(spWindow.get());
+
+            spWindow->GetDevice()->Render2D();
+
+            // Display result
+            spWindow->GetDevice()->Swap();
         }
     }
 
-
+    // We are done, cleanup
     for (auto& window : WindowManager::Instance().GetWindows())
     {
         if (window.second->GetDevice())

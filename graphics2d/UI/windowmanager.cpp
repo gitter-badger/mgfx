@@ -5,17 +5,14 @@
 #include "camera/camera.h"
 #include "ui/manipulator.h"
 
-WindowManager::WindowManager()
-{
-
-}
-
+// A singleton
 WindowManager& WindowManager::Instance()
 {
     static WindowManager manager;
     return manager;
 }
 
+// Convert SDL to Window
 Window* WindowManager::GetWindow(SDL_Window* pWindow)
 {
     auto itrFound = mapSDLToWindow.find(pWindow);
@@ -60,7 +57,7 @@ void WindowManager::RemoveWindow(Window* pWindow)
 
     auto pSDL = GetSDLWindow(pWindow);
     pWindow->GetDevice()->Cleanup();
-    
+
     mapWindowToSDL.erase(pWindow);
     for (auto& win : mapSDLToWindow)
     {
@@ -87,25 +84,6 @@ glm::ivec4 WindowManager::GetWindowRect(Window* pWindow)
     return rect;
 }
 
-void WindowManager::Update(Window* pWindow)
-{
-    auto& io = ImGui::GetIO();
-    auto pSDLWindow = GetSDLWindow(pWindow);
-    if (!pSDLWindow)
-    {
-        return;
-    }
-
-    if (pWindow->GetManipulator())
-    {
-        pWindow->GetManipulator()->Update();
-    }
-
-    if (pWindow->GetCamera())
-    {
-        pWindow->GetCamera()->Update();
-    }
-}
 
 SDL_Window* WindowManager::GetSDLWindowFromEvent(SDL_Event& e)
 {
@@ -162,11 +140,13 @@ void WindowManager::HandleEvents(bool& quit)
 
         if (pWindow)
         {
+            // The device may be interested in window messsages 
             if (pWindow->GetDevice())
             {
                 pWindow->GetDevice()->ProcessEvent(e);
             }
 
+            // If ImGui isn't watching the mouse, pass the events to the manipulator 
             if (!ImGui::GetIO().WantCaptureMouse)
             {
                 // Tell the manipulator any events it might need for moving the camera
@@ -191,6 +171,7 @@ void WindowManager::HandleEvents(bool& quit)
             {
                 switch (e.window.event)
                 {
+                    // Window close will remove and destroy the SDL_Window
                 case SDL_WINDOWEVENT_CLOSE:
                     if (pWindow)
                     {
@@ -198,6 +179,7 @@ void WindowManager::HandleEvents(bool& quit)
                     }
                     break;
                 case SDL_WINDOWEVENT_RESIZED:
+                    // The window's camera film size is equal to the window client rect
                     if (pWindow->GetCamera())
                     {
                         pWindow->GetCamera()->SetFilmSize(glm::uvec2(e.window.data1, e.window.data2));

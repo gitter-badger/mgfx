@@ -2,8 +2,6 @@
 #include "fileutils.h"
 #include "sdl/include/SDL_filesystem.h"
 
-
-
 std::string GetMediaPath(const char* pszMediaName)
 {
     fs::path basePath(SDL_GetBasePath());

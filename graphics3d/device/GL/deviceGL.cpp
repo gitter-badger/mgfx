@@ -343,7 +343,11 @@ bool DeviceGL::Render()
     glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &view[0][0]);
 
     glm::vec3 cameraPos = pCamera->GetPosition();
-    glm::vec3 cameraLook = pCamera->GetViewDirection();
+    //glm::vec3 cameraLook = pCamera->GetViewDirection();
+
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+    glm::vec3 cameraLook = pCamera->GetWorldRay(glm::vec2(x, y)).direction;
 
     glUniform3f(CameraID, cameraPos.x, cameraPos.y, cameraPos.z);
     glUniform3f(LightDirID, cameraLook.x, cameraLook.y, cameraLook.z);
