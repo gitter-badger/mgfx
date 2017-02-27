@@ -51,15 +51,8 @@ void Camera::SetFilmSize(const glm::uvec2& size)
 }
 
 
-bool Camera::Update(SDL_Window* pWindow)
+bool Camera::Update()
 {
-    int x, y;
-    SDL_GetWindowSize(pWindow, &x, &y);
-    if (filmSize.x != x || filmSize.y != y)
-    {
-        SetFilmSize(glm::uvec2(x, y));
-    }
-
     // The half-width of the viewport, in world space
     halfAngle = float(tan(glm::radians(fieldOfView) / 2.0));
 
@@ -76,6 +69,7 @@ bool Camera::Update(SDL_Window* pWindow)
         delta = time - lastTime;
         lastTime = time;
     }
+    //delta = 1000;
 
     bool changed = false;
     if (orbitDelta != glm::vec2(0.0f))
@@ -99,7 +93,6 @@ bool Camera::Update(SDL_Window* pWindow)
     UpdateRightUp();
     return changed;
 }
-
 
 // Given a screen coordinate, return a ray leaving the camera and entering the world at that 'pixel'
 Ray Camera::GetWorldRay(const glm::vec2& imageSample)
@@ -153,8 +146,8 @@ void Camera::UpdateWalk(int64_t timeDelta)
     glm::vec3 distance = frac * walkDelta;
     walkDelta *= (1.0f - frac);
 
-    position += walkDelta;
-    focalPoint += walkDelta;
+    position += distance;
+    focalPoint += distance;
 }
 
 void Camera::UpdatePosition(int64_t timeDelta)

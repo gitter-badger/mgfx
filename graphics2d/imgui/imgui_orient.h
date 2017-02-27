@@ -4,7 +4,9 @@
 #include <math.h>
 #include <algorithm>
 
+#ifndef M_PI
 #define M_PI 3.14159862f
+#endif
 
 // ----------------------------
 // Notes from: www.github.com/cmaughan

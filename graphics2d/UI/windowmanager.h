@@ -9,7 +9,7 @@ class Window;
 class WindowManager
 {
 public:
-    WindowManager();
+    static WindowManager& Instance();
 
     void HandleEvents(bool& quit);
 
@@ -23,6 +23,8 @@ public:
 
     std::map<SDL_Window*, std::shared_ptr<Window>>& GetWindows() { return mapSDLToWindow; }
 private:
+    WindowManager();
+
     SDL_Window* GetSDLWindow(Window* pWindow);
     SDL_Window* GetSDLWindowFromEvent(SDL_Event& e);
     std::map<SDL_Window*, std::shared_ptr<Window>> mapSDLToWindow;

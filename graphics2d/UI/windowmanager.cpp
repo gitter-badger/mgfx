@@ -10,6 +10,12 @@ WindowManager::WindowManager()
 
 }
 
+WindowManager& WindowManager::Instance()
+{
+    static WindowManager manager;
+    return manager;
+}
+
 Window* WindowManager::GetWindow(SDL_Window* pWindow)
 {
     auto itrFound = mapSDLToWindow.find(pWindow);
@@ -37,6 +43,13 @@ Window* WindowManager::AddWindow(SDL_Window* pWindow, std::shared_ptr<IDevice> s
     spWindow->SetManipulator(std::make_shared<Manipulator>(spWindow->GetCamera()));
     mapSDLToWindow[pWindow] = spWindow;
     mapWindowToSDL[spWindow.get()] = pWindow;
+
+    // Set initial window size
+    int w, h;
+    SDL_GetWindowSize(pWindow, &w, &h);
+    spWindow->GetCamera()->SetFilmSize(glm::uvec2(w, h));
+
+    return spWindow.get();
 }
 
 void WindowManager::RemoveWindow(Window* pWindow)
@@ -73,38 +86,6 @@ void WindowManager::Update(Window* pWindow)
         return;
     }
         
-    glm::ivec2 size;
-    SDL_GetWindowSize(pSDLWindow, &size.x, &size.y);
-
-    // Setup display size (every frame to accommodate for window resizing)
-    io.DisplaySize = ImVec2(float(size.x), float(size.y));
-
-    // Setup time step
-    Uint32	time = SDL_GetTicks();
-    double current_time = time / 1000.0;
-    io.DeltaTime = pWindow->GetUpdateTime() > 0.0 ? (float)(current_time - pWindow->GetUpdateTime()) : 0.0f;
-    pWindow->SetUpdateTime(current_time);
-
-    // Setup inputs
-    // (we already got mouse wheel, keyboard keys & characters from glfw callbacks polled in glfwPollEvents())
-    int mx, my;
-    Uint32 mouseMask = SDL_GetMouseState(&mx, &my);
-    if (SDL_GetWindowFlags(pSDLWindow) & SDL_WINDOW_MOUSE_FOCUS)
-        io.MousePos = ImVec2((float)mx, (float)my);   // Mouse position, in pixels (set to -1,-1 if no mouse / on another screen, etc.)
-    else
-        io.MousePos = ImVec2(-1, -1);
-
-    io.MouseDown[0] = windowData.mousePressed[0] || (mouseMask & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;    // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-    io.MouseDown[1] = windowData.mousePressed[1] || (mouseMask & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
-    io.MouseDown[2] = windowData.mousePressed[2] || (mouseMask & SDL_BUTTON(SDL_BUTTON_MIDDLE)) != 0;
-    windowData.mousePressed[0] = windowData.mousePressed[1] = windowData.mousePressed[2] = false;
-
-    io.MouseWheel = windowData.mouseWheel;
-    windowData.mouseWheel = 0.0f;
-
-    // Hide OS mouse cursor if ImGui is drawing it
-    SDL_ShowCursor(io.MouseDrawCursor ? 0 : 1);
-   
     if (pWindow->GetManipulator())
     {
         pWindow->GetManipulator()->Update();
@@ -112,7 +93,7 @@ void WindowManager::Update(Window* pWindow)
 
     if (pWindow->GetCamera())
     {
-        pWindow->GetCamera()->Update(pWindow);
+        pWindow->GetCamera()->Update();
     }
 }
 
@@ -201,42 +182,17 @@ void WindowManager::HandleEvents(bool& quit)
                         RemoveWindow(pWindow);
                     }
                     break;
+                case SDL_WINDOWEVENT_RESIZED:
+                    if (pWindow->GetCamera())
+                    {
+                        pWindow->GetCamera()->SetFilmSize(glm::uvec2(e.window.data1, e.window.data2));
+                    }
                 default:
                     break;
                 }
             }
         }
         break;
-
-        case SDL_KEYDOWN:
-        {
-            int key = e.key.keysym.sym & ~SDLK_SCANCODE_MASK;
-            io.KeysDown[key] = (e.type == SDL_KEYDOWN);
-            io.KeyShift = ((SDL_GetModState() & KMOD_SHIFT) != 0);
-            io.KeyCtrl = ((SDL_GetModState() & KMOD_CTRL) != 0);
-            io.KeyAlt = ((SDL_GetModState() & KMOD_ALT) != 0);
-        }
-        break;
-
-        case SDL_KEYUP:
-        {
-            int key = e.key.keysym.sym & ~SDLK_SCANCODE_MASK;
-            io.KeysDown[key] = (e.type == SDL_KEYDOWN);
-            io.KeyShift = ((SDL_GetModState() & KMOD_SHIFT) != 0);
-            io.KeyCtrl = ((SDL_GetModState() & KMOD_CTRL) != 0);
-            io.KeyAlt = ((SDL_GetModState() & KMOD_ALT) != 0);
-        }
-        break;
-
-        case SDL_TEXTINPUT:
-        {
-            io.AddInputCharactersUTF8(e.text.text);
-        }
-        break;
-
-        case SDL_QUIT:
-            quit = true;
-            break;
         default:
             continue;
         }

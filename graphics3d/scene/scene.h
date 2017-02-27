@@ -18,9 +18,13 @@ public:
     const std::vector<std::shared_ptr<Camera>>& GetCameras(std::shared_ptr<Camera>& spCamera) const { return m_vecCameras; }
     void Render(IDevice* pDevice);
 
+    void SetCurrentCamera(Camera* pCurrentCamera) { m_pCurrentCamera = pCurrentCamera; }
+    Camera* GetCurrentCamera() { return m_pCurrentCamera; }
+    
 private:
-    glm::vec4 m_clearColor;
-    std::shared_ptr<Camera> m_spCurrentCamera;
+    glm::vec4 m_clearColor = glm::vec4(1.0f);
+    Camera* m_pCurrentCamera = nullptr;
+
     std::vector<std::shared_ptr<Camera>> m_vecCameras;
     std::vector<std::shared_ptr<Mesh>> m_vecMeshes;
 };

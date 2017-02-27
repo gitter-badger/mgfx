@@ -38,12 +38,12 @@ class DeviceGL : public IDevice
 public:
     DeviceGL();
     virtual bool Init(std::shared_ptr<Scene>& spScene) override;
-    virtual bool Render(Window* pWindow) override;
+    virtual bool Render() override;
     virtual void Prepare2D() override;
     virtual void Cleanup() override;
     virtual void ProcessEvent(SDL_Event& event) override;
     virtual void Swap() override;
-    virtual SDL_Window* GetWindow() const override { return pWindow; }
+    virtual SDL_Window* GetWindow() const override { return pSDLWindow; }
 
     virtual void Draw(Mesh* pMesh) override;
 
@@ -59,7 +59,7 @@ private:
     std::map<Mesh*, std::shared_ptr<GLMesh>> m_mapDeviceMeshes;
     std::map<std::string, uint32_t> m_mapTexToID;
 
-    SDL_Window* pWindow = nullptr;
+    SDL_Window* pSDLWindow = nullptr;
     SDL_GLContext glContext;
 
     uint32_t VertexArrayID = 0;

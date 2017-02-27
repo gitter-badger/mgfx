@@ -37,37 +37,39 @@ int main(int, char**)
         return -1;
     }
 
-    WindowManager windowManager;
-
     // OpenGL
     auto pDevice = std::static_pointer_cast<IDevice>(std::make_shared<DeviceGL>());
     if (pDevice->Init(spScene))
     {
-        windowManager.AddWindow(pDevice->GetWindow(), pDevice);
-        windowManager.GetWindow(pDevice->GetWindow()).spCamera->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
+        WindowManager::Instance().AddWindow(pDevice->GetWindow(), pDevice);
+        WindowManager::Instance().GetWindow(pDevice->GetWindow())->GetCamera()->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
     }
 
+    /*
     pDevice = std::static_pointer_cast<IDevice>(std::make_shared<DeviceGL>());
     if (pDevice->Init(spScene))
     {
-        windowManager.AddWindow(pDevice->GetWindow(), pDevice);
-        windowManager.GetWindow(pDevice->GetWindow()).spCamera->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
+        WindowManager::Instance().AddWindow(pDevice->GetWindow(), pDevice);
+        WindowManager::Instance().GetWindow(pDevice->GetWindow())->GetCamera()->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
     }
+    */
 
     // Main loop
     bool done = false;
     while (!done)
     {
-        windowManager.HandleEvents(done);
+        WindowManager::Instance().HandleEvents(done);
 
-        for (auto& window : windowManager.GetWindows())
+        for (auto& window : WindowManager::Instance().GetWindows())
         {
-            windowManager.Update(window.first);
+            WindowManager::Instance().Update(window.second.get());
 
             if (window.second->GetDevice())
             {
+                spScene->SetCurrentCamera(window.second->GetCamera().get());
+
                 // 3D Rendering of the scene
-                window.second->GetDevice()->Render(window.first);
+                window.second->GetDevice()->Render();
 
                 // 2D UI
                 //window.second.spDevice->Prepare2D();
@@ -80,7 +82,7 @@ int main(int, char**)
     }
 
 
-    for (auto& window : windowManager.GetWindows())
+    for (auto& window : WindowManager::Instance().GetWindows())
     {
         if (window.second->GetDevice())
         {

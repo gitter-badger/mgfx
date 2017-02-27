@@ -10,10 +10,9 @@ uniform vec3 light_dir;
 uniform bool has_normalmap;
 
 // These values passed through from the vertex shader
-in vec2 frag_tex_coord;
-in vec3 frag_normal;
 in vec3 frag_pos_world;
-in vec4 frag_color;
+in vec3 frag_normal;
+in vec2 frag_tex_coord;
 
 // The output color
 out vec4 color;

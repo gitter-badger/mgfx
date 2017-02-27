@@ -25,7 +25,7 @@ public:
     float GetFieldOfView() const { return fieldOfView; }
 
     // Called to update the camera state for a given window area
-    bool Update(SDL_Window* pWindow);
+    bool Update();
 
     // Calculated matrices
     glm::mat4 GetLookAt() const;

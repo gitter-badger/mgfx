@@ -52,9 +52,9 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    pWindow = SDL_CreateWindow("GLShell", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-    glContext = SDL_GL_CreateContext(pWindow);
-    SDL_GL_MakeCurrent(pWindow, glContext);
+    pSDLWindow = SDL_CreateWindow("GLShell", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    glContext = SDL_GL_CreateContext(pSDLWindow);
+    SDL_GL_MakeCurrent(pSDLWindow, glContext);
 
     static bool initOnce = false;
     if (!initOnce)
@@ -102,7 +102,7 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
     glBindVertexArray(VertexArrayID);
 
     // Setup ImGui binding
-    ImGui_ImplSdlGL3_Init(pWindow);
+    ImGui_ImplSdlGL3_Init(pSDLWindow);
 
 
     return true;
@@ -110,7 +110,7 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
 
 void DeviceGL::DestroyDeviceMeshes()
 {
-    SDL_GL_MakeCurrent(pWindow, glContext);
+    SDL_GL_MakeCurrent(pSDLWindow, glContext);
 
     for (auto& spMesh : m_mapDeviceMeshes)
     {
@@ -127,7 +127,7 @@ void DeviceGL::DestroyDeviceMeshes()
 
 void DeviceGL::DestroyDeviceMesh(GLMesh* pDeviceMesh)
 {
-    SDL_GL_MakeCurrent(pWindow, glContext);
+    SDL_GL_MakeCurrent(pSDLWindow, glContext);
     for (auto& indexPart : pDeviceMesh->m_glMeshParts)
     {
         auto& spGLPart = indexPart.second;
@@ -139,7 +139,7 @@ void DeviceGL::DestroyDeviceMesh(GLMesh* pDeviceMesh)
 
 uint32_t DeviceGL::LoadTexture(std::string path)
 {
-    SDL_GL_MakeCurrent(pWindow, glContext);
+    SDL_GL_MakeCurrent(pSDLWindow, glContext);
     auto itr = m_mapTexToID.find(path);
     if (itr == m_mapTexToID.end())
     {
@@ -168,8 +168,8 @@ uint32_t DeviceGL::LoadTexture(std::string path)
 
             CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
             CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
-            CHECK_GL(glGenerateMipmap(GL_TEXTURE_2D));
-            CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+            //CHECK_GL(glGenerateMipmap(GL_TEXTURE_2D));
+            CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));// _MIPMAP_LINEAR));
             CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 
             glBindTexture(GL_TEXTURE_2D, 0);
@@ -188,7 +188,7 @@ uint32_t DeviceGL::LoadTexture(std::string path)
 
 std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
 {
-    SDL_GL_MakeCurrent(pWindow, glContext);
+    SDL_GL_MakeCurrent(pSDLWindow, glContext);
     auto spDeviceMesh = std::make_shared<GLMesh>();
 
     glBindVertexArray(VertexArrayID);
@@ -281,7 +281,7 @@ void DeviceGL::Draw(Mesh* pMesh)
         }
 
         CHECK_GL(glActiveTexture(GL_TEXTURE1));
-        if (spGLPart->textureIDBump)
+        if (false/*spGLPart->textureIDBump*/)
         {
             glUniform1i(HasNormalMapID, 1);
             CHECK_GL(glBindTexture(GL_TEXTURE_2D, spGLPart->textureIDBump));
@@ -299,9 +299,9 @@ void DeviceGL::Draw(Mesh* pMesh)
     glDisableVertexAttribArray(2);
 }
 
-bool DeviceGL::Render(Window* pWindow)
+bool DeviceGL::Render()
 {
-    SDL_GL_MakeCurrent(pWindow->GetSDLWindow(), glContext);
+    SDL_GL_MakeCurrent(pSDLWindow, glContext);
     if (!m_spScene)
     {
         return true;
@@ -316,7 +316,7 @@ bool DeviceGL::Render(Window* pWindow)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    auto& pCamera = pWindow->GetCamera();
+    auto pCamera = m_spScene->GetCurrentCamera();
     if (pCamera)
     {
         glViewport(0, 0, pCamera->GetFilmSize().x, pCamera->GetFilmSize().y);
@@ -356,7 +356,7 @@ bool DeviceGL::Render(Window* pWindow)
 
 void DeviceGL::Cleanup()
 {
-    SDL_GL_MakeCurrent(pWindow, glContext);
+    SDL_GL_MakeCurrent(pSDLWindow, glContext);
 
     ImGui_ImplSdlGL3_Shutdown();
 
@@ -367,25 +367,25 @@ void DeviceGL::Cleanup()
 
     // Cleanup
     SDL_GL_DeleteContext(glContext);
-    SDL_DestroyWindow(pWindow);
+    SDL_DestroyWindow(pSDLWindow);
 }
 
 void DeviceGL::Prepare2D()
 {
-    SDL_GL_MakeCurrent(pWindow, glContext);
-    ImGui_ImplSdlGL3_NewFrame(pWindow);
+    SDL_GL_MakeCurrent(pSDLWindow, glContext);
+    ImGui_ImplSdlGL3_NewFrame(pSDLWindow);
 
     glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
 }
 
 void DeviceGL::ProcessEvent(SDL_Event& event)
 {
-    SDL_GL_MakeCurrent(pWindow, glContext);
+    SDL_GL_MakeCurrent(pSDLWindow, glContext);
     ImGui_ImplSdlGL3_ProcessEvent(&event);
 }
 
 void DeviceGL::Swap()
 {
-    SDL_GL_MakeCurrent(pWindow, glContext);
-    SDL_GL_SwapWindow(pWindow);
+    SDL_GL_MakeCurrent(pSDLWindow, glContext);
+    SDL_GL_SwapWindow(pSDLWindow);
 }
