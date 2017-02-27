@@ -30,12 +30,10 @@ SET(GRAPHICS3D_DEVICEGL_SOURCES
     graphics3d/device/GL/deviceGL.h
     graphics3d/device/GL/gl3w.c
     graphics3d/device/GL/glcorearb.h
-    graphics3d/device/GL/texture.cpp
-    graphics3d/device/GL/texture.h
     graphics3d/device/GL/shader.cpp
     graphics3d/device/GL/shader.h
-    graphics3d/device/GL/imgui_impl_sdl_gl3.cpp
-    graphics3d/device/GL/imgui_impl_sdl_gl3.h
+    graphics3d/device/GL/imguisdl_gl3.cpp
+    graphics3d/device/GL/imguisdl_gl3.h
 )
 
 SET(GRAPHICS2D_IMGUI_SOURCES

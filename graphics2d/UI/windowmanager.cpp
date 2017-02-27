@@ -38,6 +38,8 @@ SDL_Window* WindowManager::GetSDLWindow(Window* pWindow)
 
 Window* WindowManager::AddWindow(SDL_Window* pWindow, std::shared_ptr<IDevice> spDevice)
 {
+    LOG(INFO) << "Adding Window: " << std::hex << pWindow;
+
     auto spWindow = std::make_shared<Window>(spDevice);
     spWindow->SetCamera(std::make_shared<Camera>());
     spWindow->SetManipulator(std::make_shared<Manipulator>(spWindow->GetCamera()));
@@ -54,14 +56,22 @@ Window* WindowManager::AddWindow(SDL_Window* pWindow, std::shared_ptr<IDevice> s
 
 void WindowManager::RemoveWindow(Window* pWindow)
 {
+    LOG(INFO) << "Removing Window: " << std::hex << pWindow;
+
+    auto pSDL = GetSDLWindow(pWindow);
+    pWindow->GetDevice()->Cleanup();
+    
     mapWindowToSDL.erase(pWindow);
     for (auto& win : mapSDLToWindow)
     {
         if (win.second.get() == pWindow)
         {
             mapSDLToWindow.erase(win.first);
+            break;
         }
     }
+
+    SDL_DestroyWindow(pSDL);
 }
 
 glm::ivec4 WindowManager::GetWindowRect(Window* pWindow)
@@ -85,7 +95,7 @@ void WindowManager::Update(Window* pWindow)
     {
         return;
     }
-        
+
     if (pWindow->GetManipulator())
     {
         pWindow->GetManipulator()->Update();
@@ -138,6 +148,7 @@ SDL_Window* WindowManager::GetSDLWindowFromEvent(SDL_Event& e)
     return SDL_GL_GetCurrentWindow();
 }
 
+// Handle events that pertain to windows.
 void WindowManager::HandleEvents(bool& quit)
 {
     ImGuiIO& io = ImGui::GetIO();
@@ -145,20 +156,24 @@ void WindowManager::HandleEvents(bool& quit)
     SDL_Event e;
     while (SDL_PollEvent(&e))
     {
+        // Get the SDL and the Window wrapper for this event
         auto pSDLWindow = GetSDLWindowFromEvent(e);
         auto pWindow = GetWindow(pSDLWindow);
 
-        if (pWindow->GetDevice())
+        if (pWindow)
         {
-            pWindow->GetDevice()->ProcessEvent(e);
-        }
-
-        if (!ImGui::GetIO().WantCaptureMouse)
-        {
-            // Tell the manipulator any events it might need for moving the camera
-            if (pWindow->GetManipulator())
+            if (pWindow->GetDevice())
             {
-                pWindow->GetManipulator()->ProcessEvent(e);
+                pWindow->GetDevice()->ProcessEvent(e);
+            }
+
+            if (!ImGui::GetIO().WantCaptureMouse)
+            {
+                // Tell the manipulator any events it might need for moving the camera
+                if (pWindow->GetManipulator())
+                {
+                    pWindow->GetManipulator()->ProcessEvent(e);
+                }
             }
         }
 

@@ -2,10 +2,9 @@
 
 
 #include "gl3w.h"
-#include "imgui_impl_sdl_gl3.h"
+#include "imguisdl_gl3.h"
 #include "gl3w.h"
 #include "shader.h"
-#include "texture.h"
 #include "IDevice.h"
 
 class Camera;
@@ -37,9 +36,11 @@ class DeviceGL : public IDevice
 {
 public:
     DeviceGL();
+    ~DeviceGL();
     virtual bool Init(std::shared_ptr<Scene>& spScene) override;
     virtual bool Render() override;
     virtual void Prepare2D() override;
+    virtual void Render2D() override;
     virtual void Cleanup() override;
     virtual void ProcessEvent(SDL_Event& event) override;
     virtual void Swap() override;
@@ -61,6 +62,8 @@ private:
 
     SDL_Window* pSDLWindow = nullptr;
     SDL_GLContext glContext;
+
+    std::shared_ptr<ImGuiSDL_GL3> m_spImGuiDraw;
 
     uint32_t VertexArrayID = 0;
 

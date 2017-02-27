@@ -44,15 +44,15 @@ int main(int, char**)
         WindowManager::Instance().AddWindow(pDevice->GetWindow(), pDevice);
         WindowManager::Instance().GetWindow(pDevice->GetWindow())->GetCamera()->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
     }
+    pDevice = nullptr;
 
-    /*
     pDevice = std::static_pointer_cast<IDevice>(std::make_shared<DeviceGL>());
     if (pDevice->Init(spScene))
     {
         WindowManager::Instance().AddWindow(pDevice->GetWindow(), pDevice);
         WindowManager::Instance().GetWindow(pDevice->GetWindow())->GetCamera()->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
     }
-    */
+    pDevice = nullptr;
 
     // Main loop
     bool done = false;
@@ -72,8 +72,9 @@ int main(int, char**)
                 window.second->GetDevice()->Render();
 
                 // 2D UI
-                //window.second.spDevice->Prepare2D();
-                //renderUI.Render();
+                window.second->GetDevice()->Prepare2D();
+                renderUI.Render(window.second.get());
+                window.second->GetDevice()->Render2D();
 
                 // Display result
                 window.second->GetDevice()->Swap();
@@ -90,6 +91,7 @@ int main(int, char**)
         }
     }
 
+    ImGui::Shutdown();
     SDL_Quit();
 
     return 0;

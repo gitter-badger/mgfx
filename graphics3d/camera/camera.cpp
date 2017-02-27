@@ -122,6 +122,7 @@ Ray Camera::GetWorldRay(const glm::vec2& imageSample)
 
 void Camera::Walk(glm::vec3 planes)
 {
+    planes *= 2.0f;
     walkDelta += viewDirection * planes.z;
     walkDelta += right * planes.x;
     walkDelta += up * planes.y;

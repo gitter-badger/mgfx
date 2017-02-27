@@ -38,6 +38,11 @@ DeviceGL::DeviceGL()
 
 }
 
+DeviceGL::~DeviceGL()
+{
+
+}
+
 bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
 {
     m_spScene = pScene;
@@ -66,6 +71,8 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
     // Get useful debug messages
     CHECK_GL(glDebugMessageCallback((GLDEBUGPROC)&DebugCB, this));
     CHECK_GL(glEnable(GL_DEBUG_OUTPUT));
+
+    m_spImGuiDraw = std::make_shared<ImGuiSDL_GL3>();
 
     //    SDL_GL_SetSwapInterval(0);
 
@@ -102,8 +109,7 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
     glBindVertexArray(VertexArrayID);
 
     // Setup ImGui binding
-    ImGui_ImplSdlGL3_Init(pSDLWindow);
-
+    m_spImGuiDraw->Init(pSDLWindow);
 
     return true;
 }
@@ -356,9 +362,11 @@ bool DeviceGL::Render()
 
 void DeviceGL::Cleanup()
 {
+    // Cleanup IMGui and device
     SDL_GL_MakeCurrent(pSDLWindow, glContext);
 
-    ImGui_ImplSdlGL3_Shutdown();
+    m_spImGuiDraw->Shutdown();
+    m_spImGuiDraw.reset();
 
     DestroyDeviceMeshes();
 
@@ -370,20 +378,30 @@ void DeviceGL::Cleanup()
     SDL_DestroyWindow(pSDLWindow);
 }
 
+// Prepare the device for doing 2D Rendering using ImGUI
 void DeviceGL::Prepare2D()
 {
     SDL_GL_MakeCurrent(pSDLWindow, glContext);
-    ImGui_ImplSdlGL3_NewFrame(pSDLWindow);
+    m_spImGuiDraw->NewFrame(pSDLWindow);
 
     glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
 }
 
-void DeviceGL::ProcessEvent(SDL_Event& event)
+void DeviceGL::Render2D()
 {
-    SDL_GL_MakeCurrent(pSDLWindow, glContext);
-    ImGui_ImplSdlGL3_ProcessEvent(&event);
+    ImGui::Render();
+    m_spImGuiDraw->RenderDrawLists(ImGui::GetDrawData());
 }
 
+// Handle any interesting SDL events
+void DeviceGL::ProcessEvent(SDL_Event& event)
+{
+    // Just pass the event onto ImGUI, in case it needs mouse events, etc.
+    SDL_GL_MakeCurrent(pSDLWindow, glContext);
+    m_spImGuiDraw->ProcessEvent(&event);
+}
+
+// Copy the back buffer to the screen
 void DeviceGL::Swap()
 {
     SDL_GL_MakeCurrent(pSDLWindow, glContext);
