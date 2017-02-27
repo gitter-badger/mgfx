@@ -154,25 +154,25 @@ uint32_t DeviceGL::LoadTexture(std::string path)
         if (image != nullptr)
         {
             uint32_t textureID;
-            glGenTextures(1, &textureID);
-            glBindTexture(GL_TEXTURE_2D, textureID);
+            CHECK_GL(glGenTextures(1, &textureID));
+            CHECK_GL(glBindTexture(GL_TEXTURE_2D, textureID));
 
             if (comp == 3)
             {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+                CHECK_GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image));
             }
             else if (comp == 4)
             {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+                CHECK_GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image));
             }
 
             CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
             CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
-            //CHECK_GL(glGenerateMipmap(GL_TEXTURE_2D));
-            CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));// _MIPMAP_LINEAR));
+            CHECK_GL(glGenerateMipmap(GL_TEXTURE_2D));
+            CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
             CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 
-            glBindTexture(GL_TEXTURE_2D, 0);
+            CHECK_GL(glBindTexture(GL_TEXTURE_2D, 0));
 
             stbi_image_free(image);
             m_mapTexToID[path] = textureID;
@@ -191,7 +191,7 @@ std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
     SDL_GL_MakeCurrent(pSDLWindow, glContext);
     auto spDeviceMesh = std::make_shared<GLMesh>();
 
-    glBindVertexArray(VertexArrayID);
+    CHECK_GL(glBindVertexArray(VertexArrayID));
 
     for (auto& spPart : pMesh->GetMeshParts())
     {
@@ -251,7 +251,7 @@ void DeviceGL::Draw(Mesh* pMesh)
         pDeviceMesh = itrFound->second.get();
     }
 
-    glBindVertexArray(VertexArrayID);
+    CHECK_GL(glBindVertexArray(VertexArrayID));
 
     for (auto& indexPart : pDeviceMesh->m_glMeshParts)
     {
@@ -277,26 +277,26 @@ void DeviceGL::Draw(Mesh* pMesh)
         }
         else
         {
-            glBindTexture(GL_TEXTURE_2D, 0);
+            CHECK_GL(glBindTexture(GL_TEXTURE_2D, 0));
         }
 
         CHECK_GL(glActiveTexture(GL_TEXTURE1));
         if (false/*spGLPart->textureIDBump*/)
         {
-            glUniform1i(HasNormalMapID, 1);
+            CHECK_GL(glUniform1i(HasNormalMapID, 1));
             CHECK_GL(glBindTexture(GL_TEXTURE_2D, spGLPart->textureIDBump));
         }
         else
         {
-            glUniform1i(HasNormalMapID, 0);
-            glBindTexture(GL_TEXTURE_2D, 0);
+            CHECK_GL(glUniform1i(HasNormalMapID, 0));
+            CHECK_GL(glBindTexture(GL_TEXTURE_2D, 0));
         }
-        glDrawArrays(GL_TRIANGLES, 0, spGLPart->numVertices);
+        CHECK_GL(glDrawArrays(GL_TRIANGLES, 0, spGLPart->numVertices));
     }
 
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
+    CHECK_GL(glDisableVertexAttribArray(0));
+    CHECK_GL(glDisableVertexAttribArray(1));
+    CHECK_GL(glDisableVertexAttribArray(2));
 }
 
 bool DeviceGL::Render()
@@ -333,7 +333,7 @@ bool DeviceGL::Render()
     // Send our transformation to the currently bound shader, 
     // in the "MVP" uniform
     CHECK_GL(glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]));
-    glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &model[0][0]);
+    CHECK_GL(glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &model[0][0]));
     glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &view[0][0]);
 
     glm::vec3 cameraPos = pCamera->GetPosition();
