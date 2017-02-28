@@ -19,7 +19,7 @@ std::shared_ptr<Scene> LoadScene()
     auto spScene = std::make_shared<Scene>();
     spScene->SetClearColor(glm::vec4(0.7f, .7f, .8f, 1.0f));
 
-    auto meshPath = GetMediaPath("models/rungholt/rungholt.obj");
+    auto meshPath = GetMediaPath("models/sponza/sponza.obj");
     if (!meshPath.empty())
     {
         auto spMesh = std::make_shared<Mesh>();

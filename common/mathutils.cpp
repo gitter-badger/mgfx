@@ -27,6 +27,11 @@ glm::quat QuatFromVectors(glm::vec3 u, glm::vec3 v)
     return glm::normalize(glm::quat(real_part, w.x, w.y, w.z));
 }
 
+float SmoothStep(float val)
+{
+    return val * val * (3.0f - 2.0f * val);
+}
+
 glm::vec4 RectClip(const glm::vec4& rect, const glm::vec4& clip)
 {
     glm::vec4 ret = rect;

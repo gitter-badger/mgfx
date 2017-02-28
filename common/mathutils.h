@@ -1,5 +1,7 @@
 #pragma once
 
+float SmoothStep(float val);
+
 template<class T>
 bool IsRectEmpty(const T& rect)
 {

@@ -329,6 +329,8 @@ void DeviceGL::Draw(Mesh* pMesh)
     CHECK_GL(glDisableVertexAttribArray(0));
     CHECK_GL(glDisableVertexAttribArray(1));
     CHECK_GL(glDisableVertexAttribArray(2));
+    CHECK_GL(glDisableVertexAttribArray(3));
+    CHECK_GL(glDisableVertexAttribArray(4));
 }
 
 bool DeviceGL::Render()

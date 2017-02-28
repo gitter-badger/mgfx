@@ -1,18 +1,6 @@
 #include "Common.h"
 #include "Camera.h"
-
-namespace
-{
-int64_t GetTime()
-{
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-}
-
-float SmoothStep(float val)
-{
-    return val * val * (3.0f - 2.0f * val);
-}
-}
+#include "Timer.h"
 
 void Camera::SetPositionAndFocalPoint(const glm::vec3& pos, const glm::vec3& point)
 {
@@ -45,7 +33,7 @@ bool Camera::Update()
     // The half-width of the viewport, in world space
     m_halfAngle = float(tan(glm::radians(m_fieldOfView) / 2.0));
 
-    auto time = GetTime();
+    auto time = Timer::Instance().GetTimeMs();
 
     int64_t delta;
     if (m_lastTime == 0)

@@ -6,7 +6,7 @@ SET (CMAKE_MODULE_PATH
 )
 
 INCLUDE(copy_files)
-INCLUDE(cotire)
+#INCLUDE(cotire)
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
   set(ARCH_64 TRUE)
@@ -85,6 +85,8 @@ SET(COMMON_SOURCES
     common/mathutils.cpp
     common/fileutils.cpp
     common/fileutils.h
+    common/timer.cpp
+    common/timer.h
 
     lib/easylogging/src/easylogging++.cc
 )
@@ -134,7 +136,7 @@ ADD_EXECUTABLE (${PROJECT_NAME} WIN32 ${SOURCES} ${LIBRARY_SOURCES})
 set_target_properties(${PROJECT_NAME} PROPERTIES COTIRE_CXX_UNITY_SOURCE_INIT "common/common.cpp")
 set_target_properties(${PROJECT_NAME} PROPERTIES COTIRE_CXX_PREFIX_HEADER_INIT "common/common.h")
 set_target_properties(${PROJECT_NAME} PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
-COTIRE(${PROJECT_NAME})
+#COTIRE(${PROJECT_NAME})
 
 TARGET_LINK_LIBRARIES (${PROJECT_NAME}
 ${CMAKE_CURRENT_SOURCE_DIR}/lib/sdl/lib/${PROCESSOR_ARCH}/SDL2.lib
