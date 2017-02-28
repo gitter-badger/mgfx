@@ -2,7 +2,7 @@
 #include "device/GL/deviceGL.h"
 #include "camera/camera.h"
 #include "scene/scene.h"
-#include "scene/mesh.h"
+#include "geometry/mesh.h"
 #include "ui/windowmanager.h"
 #include "ui/window.h"
 #include "fileutils.h"
@@ -143,8 +143,13 @@ void DeviceGL::DestroyDeviceMesh(GLMesh* pDeviceMesh)
     }
 }
 
-uint32_t DeviceGL::LoadTexture(std::string path)
+uint32_t DeviceGL::LoadTexture(const fs::path& path)
 {
+    if (!fs::exists(path))
+    {
+        return 0;
+    }
+
     SDL_GL_MakeCurrent(pSDLWindow, glContext);
     auto itr = m_mapTexToID.find(path);
     if (itr == m_mapTexToID.end())
@@ -152,9 +157,7 @@ uint32_t DeviceGL::LoadTexture(std::string path)
         int w;
         int h;
         int comp;
-        std::string root("models/sponza");
-        std::string matPath = root + "/" + path;
-        unsigned char* image = stbi_load(GetMediaPath(matPath.c_str()).c_str(), &w, &h, &comp, STBI_default);
+        unsigned char* image = stbi_load(path.string().c_str(), &w, &h, &comp, STBI_default);
 
         assert(image != nullptr);
         if (image != nullptr)
@@ -234,12 +237,12 @@ std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
             auto& mat = pMesh->GetMaterials()[spPart->MaterialID];
             if (!mat.diffuse_texname.empty())
             {
-                spGLPart->textureID = LoadTexture(mat.diffuse_texname);
+                spGLPart->textureID = LoadTexture(GetMediaPath(mat.diffuse_texname.c_str(), pMesh->GetRootPath()));
             }
 
             if (!mat.bump_texname.empty())
             {
-                spGLPart->textureIDBump = LoadTexture(mat.bump_texname);
+                spGLPart->textureIDBump = LoadTexture(GetMediaPath(mat.bump_texname.c_str(), pMesh->GetRootPath()));
             }
         }
         else

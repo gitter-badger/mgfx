@@ -6,19 +6,20 @@
 #include "geometry/tangentspace.h"
 #include "geometry/indexer.h"
 
-bool Mesh::Load(const char* pszModel)
+bool Mesh::Load(const fs::path& modelPath)
 {
-    auto strPath = GetMediaPath(pszModel);
-    if (strPath.empty())
+    if (!fs::exists(modelPath))
     {
         return false;
     }
 
+    m_rootPath = GetDir(modelPath);
+
     std::string err;
-    bool ret = tinyobj::LoadObj(&m_attrib, &m_shapes, &m_materials, &err, strPath.c_str(), GetDir(strPath.c_str()).c_str(), true);
+    bool ret = tinyobj::LoadObj(&m_attrib, &m_shapes, &m_materials, &err, modelPath.string().c_str(), (GetDir(modelPath).string() + "/").c_str(), true);
     if (!err.empty())
     {
-        // TODO: Output message
+        LOG(ERROR) << err;
     }
     if (!ret)
     {
@@ -46,9 +47,21 @@ bool Mesh::Load(const char* pszModel)
         // Compute the tangent and binormal vectors for the mesh (used in bump mapping)
         computeTangentBasis(positions, texCoords, normals, tangents, binormals);
 
+#ifdef _DEBUG
+        for (uint32_t i = 0; i < positions.size(); i++)
+        {
+            spPart->Indices.push_back(i);
+        }
+        spPart->Positions = positions;
+        spPart->Normals = normals;
+        spPart->Tangents = tangents;
+        spPart->Binormals = binormals;
+        spPart->UVs = texCoords;
+#else
         // Re-index the mesh part
         indexVBO_TBN(positions, texCoords, normals, tangents, binormals,
             spPart->Indices, spPart->Positions, spPart->UVs, spPart->Normals, spPart->Tangents, spPart->Binormals);
+#endif
 
         m_meshParts.push_back(spPart);
     };

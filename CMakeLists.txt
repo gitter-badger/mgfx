@@ -60,6 +60,8 @@ SET(GRAPHICS3D_GEOMETRY_SOURCES
     graphics3d/geometry/indexer.h
     graphics3d/geometry/tangentspace.cpp
     graphics3d/geometry/tangentspace.h
+    graphics3d/geometry/mesh.cpp
+    graphics3d/geometry/mesh.h
 )
 
 SET(GRAPHICS3D_UI_SOURCES
@@ -70,8 +72,6 @@ SET(GRAPHICS3D_UI_SOURCES
 SET(GRAPHICS3D_SCENE_SOURCES
     graphics3d/scene/scene.h
     graphics3d/scene/scene.cpp
-    graphics3d/scene/mesh.cpp
-    graphics3d/scene/mesh.h
     )
 
 SET(HOST_SOURCES

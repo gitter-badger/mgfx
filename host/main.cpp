@@ -6,7 +6,7 @@
 
 #include "camera/camera.h"
 #include "scene/scene.h"
-#include "scene/mesh.h"
+#include "geometry/mesh.h"
 #include "ui/manipulator.h"
 #include "ui/windowmanager.h"
 #include "ui/window.h"
@@ -19,9 +19,13 @@ std::shared_ptr<Scene> LoadScene()
     auto spScene = std::make_shared<Scene>();
     spScene->SetClearColor(glm::vec4(0.7f, .7f, .8f, 1.0f));
 
-    auto spMesh = std::make_shared<Mesh>();
-    spMesh->Load("models/sponza/sponza.obj");// sponza / sponza.obj");
-    spScene->AddMesh(spMesh);
+    auto meshPath = GetMediaPath("models/rungholt/rungholt.obj");
+    if (!meshPath.empty())
+    {
+        auto spMesh = std::make_shared<Mesh>();
+        spMesh->Load(meshPath);
+        spScene->AddMesh(spMesh);
+    }
 
     return spScene;
 }

@@ -2,19 +2,33 @@
 #include "fileutils.h"
 #include "sdl/include/SDL_filesystem.h"
 
-std::string GetMediaPath(const char* pszMediaName)
+fs::path GetMediaPath(const char* pszMediaName)
 {
     fs::path basePath(SDL_GetBasePath());
-    return (basePath / "assets" / pszMediaName).generic_string();
+    basePath = basePath / "assets" / pszMediaName;
+    if (fs::exists(basePath))
+    {
+        return fs::absolute(basePath);
+    }
+    return fs::path();
 }
 
-std::string GetDir(const char* pszPath)
+fs::path GetMediaPath(const char* pszMediaName, const fs::path& rootPath)
 {
-    fs::path p(pszPath);
-    return p.parent_path().string() + "/";
+    auto basePath = rootPath / pszMediaName;
+    if (fs::exists(basePath))
+    {
+        return fs::absolute(basePath);
+    }
+    return (rootPath / pszMediaName);
 }
 
-std::string ReadFile(const char* fileName)
+fs::path GetDir(const fs::path& path)
+{
+    return path.parent_path();
+}
+
+std::string ReadFile(const fs::path& fileName)
 {
     std::ifstream ifs(fileName);
     if (!ifs.is_open())

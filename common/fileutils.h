@@ -2,6 +2,7 @@
 
 namespace fs = std::experimental::filesystem::v1;
 
-std::string GetMediaPath(const char* pszMediaName);
-std::string GetDir(const char* pszPath);
-std::string ReadFile(const char* fileName);
+fs::path GetMediaPath(const char* pszMediaName);
+fs::path GetMediaPath(const char* pszMediaName, const fs::path& rootPath);
+fs::path GetDir(const fs::path& path);
+std::string ReadFile(const fs::path& fileName);

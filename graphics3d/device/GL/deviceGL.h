@@ -53,7 +53,7 @@ public:
 
 private:
     std::shared_ptr<GLMesh> BuildDeviceMesh(Mesh* pMesh);
-    uint32_t LoadTexture(std::string path);
+    uint32_t LoadTexture(const fs::path& path);
     void DestroyDeviceMesh(GLMesh* pDeviceMesh);
     void DestroyDeviceMeshes();
 
@@ -61,7 +61,7 @@ private:
     std::shared_ptr<Scene> m_spScene;
 
     std::map<Mesh*, std::shared_ptr<GLMesh>> m_mapDeviceMeshes;
-    std::map<std::string, uint32_t> m_mapTexToID;
+    std::map<fs::path, uint32_t> m_mapTexToID;
 
     SDL_Window* pSDLWindow = nullptr;
     SDL_GLContext glContext;
