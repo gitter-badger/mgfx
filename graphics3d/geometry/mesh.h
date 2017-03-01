@@ -11,8 +11,6 @@ struct MeshPart
     std::vector<uint32_t> Indices;
     std::vector<glm::vec3> Positions;
     std::vector<glm::vec3> Normals;
-    std::vector<glm::vec3> Tangents;
-    std::vector<glm::vec3> Binormals;
     std::vector<glm::vec2> UVs;
 };
 

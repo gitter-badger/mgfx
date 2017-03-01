@@ -12,8 +12,6 @@ uniform bool has_normalmap;
 // These values passed through from the vertex shader
 in vec3 frag_pos_world;
 in vec3 frag_normal;
-in vec3 frag_tangent;
-in vec3 frag_binormal;
 in vec2 frag_tex_coord;
 
 // The output color
@@ -28,6 +26,34 @@ vec3 CalcAmbient(vec3 normal)
     return mix(AmbientDown, AmbientUp, normal.y * .5 + .5);
 }
 
+mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
+{
+    // get edge vectors of the pixel triangle
+    vec3 dp1 = dFdx( p );
+    vec3 dp2 = dFdy( p );
+    vec2 duv1 = dFdx( uv );
+    vec2 duv2 = dFdy( uv );
+ 
+    // solve the linear system
+    vec3 dp2perp = cross( dp2, N );
+    vec3 dp1perp = cross( N, dp1 );
+    vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+    vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+ 
+    // construct a scale-invariant frame 
+    float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
+    return mat3( T * invmax, B * invmax, N );
+}
+
+vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
+{
+    // assume N, the interpolated vertex normal and 
+    // V, the view vector (vertex to eye)
+    vec3 map = texture( normal_sampler, texcoord ).xyz * 2.0f - 1.0f;
+    mat3 TBN = cotangent_frame( N, -V, texcoord );
+    return normalize( TBN * map );
+}
+
 void main()
 {
     // Sample the diffuse map
@@ -37,11 +63,7 @@ void main()
     vec3 normal;
     if (has_normalmap)
     {
-        mat3 tangentToWorld = mat3(normalize(frag_tangent),
-                                   normalize(frag_binormal),
-                                   normalize(frag_normal));
-        normal = normalize(texture(normal_sampler, frag_tex_coord).rgb * 2.0 - 1.0);
-        normal = normalize(tangentToWorld * normal);
+        normal = perturb_normal(frag_normal, frag_pos_world, frag_tex_coord);
     }
     else
     {
@@ -81,4 +103,5 @@ void main()
     //vec2 col = frag_tex_coord * .5 + .5;
     //color = vec4(col.x, col.y, 0.0f, 1.0f); 
     color = vec4(illuminance, diffuse.a);
+    //color = vec4(normal * .50f + .5f, 1.0f);
 }

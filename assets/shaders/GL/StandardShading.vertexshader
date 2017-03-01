@@ -8,15 +8,11 @@ uniform mat4 M;
 // Coordinates  of the geometry
 layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec3 in_normal;
-layout(location = 2) in vec3 in_tangent;
-layout(location = 3) in vec3 in_binormal;
-layout(location = 4) in vec2 in_tex_coord;
+layout(location = 2) in vec2 in_tex_coord;
 
 // Outputs to the pixel shader
 out vec3 frag_pos_world;
 out vec3 frag_normal;
-out vec3 frag_tangent;
-out vec3 frag_binormal;
 out vec2 frag_tex_coord;
 
 void main()
@@ -34,8 +30,6 @@ void main()
     frag_tex_coord = in_tex_coord * vec2(1.0f, -1.0f);
 
     frag_normal = normalize((invtransmodel * vec4(in_normal, 0.0)).xyz);
-    frag_tangent = normalize((invtransmodel * vec4(in_tangent, 0.0)).xyz);
-    frag_binormal = normalize((invtransmodel * vec4(in_binormal, 0.0)).xyz);
 
     frag_pos_world = world_pos.xyz; 
 }

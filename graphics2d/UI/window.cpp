@@ -9,6 +9,7 @@ Window::Window(std::shared_ptr<IDevice>& spDevice)
 
 }
 
+// Update the camera and manipulator owned by the window
 void Window::PreRender()
 {
     if (m_spManipulator)

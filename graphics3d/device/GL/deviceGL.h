@@ -21,8 +21,6 @@ struct GLMeshPart
 {
     uint32_t positionID = 0;
     uint32_t normalID = 0;
-    uint32_t tangentID = 0;
-    uint32_t binormalID = 0;
     uint32_t uvID = 0;
     uint32_t indicesID = 0;
     uint32_t numIndices = 0;
@@ -41,9 +39,9 @@ public:
     DeviceGL();
     ~DeviceGL();
     virtual bool Init(std::shared_ptr<Scene>& spScene) override;
-    virtual bool Render() override;
+    virtual bool Prepare3D() override;
     virtual void Prepare2D() override;
-    virtual void Render2D() override;
+    virtual void Finish2D() override;
     virtual void Cleanup() override;
     virtual void ProcessEvent(SDL_Event& event) override;
     virtual void Swap() override;

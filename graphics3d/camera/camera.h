@@ -6,7 +6,8 @@ struct Ray
     glm::vec3 direction;
 };
 
-// A simple camera
+// This is my favourite little camera; used in ray tracing and 3D projects.
+// A simple camera with a quaternion for orientation and a position in space.
 class Camera
 {
 public:

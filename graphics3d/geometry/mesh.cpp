@@ -3,7 +3,6 @@
 
 #define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
 #include "mesh.h"
-#include "geometry/tangentspace.h"
 #include "geometry/indexer.h"
 
 bool Mesh::Load(const fs::path& modelPath)
@@ -26,42 +25,21 @@ bool Mesh::Load(const fs::path& modelPath)
         return false;
     }
 
-    // Note:
-    // In this demo I am building lists of triangles for each part of the mesh that has a different material.
-    // A further optimization is to index the triangles.
-    // This saves bandwidth when sending geometry, and memory space.
-    // It makes things a bit more complicated though, because you have to build index lists based on material/vertex groups,
-    // as well as sending them to the card.
-    // And on modern devices, your geometry bandwidth may not be the most costly thing.
-    // Indexing geometry could be considered premature optimization, and is easy low-hanging fruit if you need to do it!
     std::shared_ptr<MeshPart> spPart;
 
     std::vector<glm::vec3> positions;
     std::vector<glm::vec3> normals;
-    std::vector<glm::vec3> tangents;
-    std::vector<glm::vec3> binormals;
     std::vector<glm::vec2> texCoords;
 
     auto finishPart = [&](std::shared_ptr<MeshPart>& spPart)
     {
-        // Compute the tangent and binormal vectors for the mesh (used in bump mapping)
-        computeTangentBasis(positions, texCoords, normals, tangents, binormals);
-
-#ifdef _DEBUG
-        for (uint32_t i = 0; i < positions.size(); i++)
+        if (positions.empty())
         {
-            spPart->Indices.push_back(i);
+            return;
         }
-        spPart->Positions = positions;
-        spPart->Normals = normals;
-        spPart->Tangents = tangents;
-        spPart->Binormals = binormals;
-        spPart->UVs = texCoords;
-#else
+
         // Re-index the mesh part
-        indexVBO_TBN(positions, texCoords, normals, tangents, binormals,
-            spPart->Indices, spPart->Positions, spPart->UVs, spPart->Normals, spPart->Tangents, spPart->Binormals);
-#endif
+        indexVBO(positions, texCoords, normals, spPart->Indices, spPart->Positions, spPart->UVs, spPart->Normals);
 
         m_meshParts.push_back(spPart);
     };
@@ -70,27 +48,22 @@ bool Mesh::Load(const fs::path& modelPath)
     {
         tinyobj::mesh_t& m = shape.mesh;
 
-        bool newPart = true;
         for (size_t j = 0; j < m.indices.size(); j += 3)
         {
-            if (spPart &&
+            if (!spPart ||
                 spPart->MaterialID != m.material_ids[j / 3])
             {
-                finishPart(spPart);
-                newPart = true;
-            }
-            
-            if (newPart)
-            {
-                newPart = false;
+                if (spPart)
+                {
+                    finishPart(spPart);
+                }
+
                 spPart = std::make_shared<MeshPart>();
                 spPart->MaterialID = m.material_ids[j / 3];
                 spPart->PartName = shape.name;
 
                 positions.clear();
                 normals.clear();
-                tangents.clear();
-                binormals.clear();
                 texCoords.clear();
             }
 
@@ -124,9 +97,10 @@ bool Mesh::Load(const fs::path& modelPath)
             }
         }
 
-        if (!newPart)
+        if (spPart)
         {
             finishPart(spPart);
+            spPart = nullptr;
         }
     }
     return true;

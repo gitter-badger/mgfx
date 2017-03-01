@@ -79,20 +79,25 @@ int main(int, char**)
         {
             auto& spWindow = windows.second;
 
+            // Setup window
             spWindow->PreRender();
 
-            // Draw the scene with this window's camera
+            // Set the current camera
             spScene->SetCurrentCamera(spWindow->GetCamera().get());
 
-            // 3D Rendering of the scene
-            spWindow->GetDevice()->Render();
+            // 3D Rendering prep
+            spWindow->GetDevice()->Prepare3D();
 
-            // 2D UI
+            // Draw the scene
+            spScene->Render(spWindow->GetDevice().get());
+
+            // 2D Rendering prep
             spWindow->GetDevice()->Prepare2D();
 
+            // Draw the 2D
             renderUI.Render(spWindow.get());
 
-            spWindow->GetDevice()->Render2D();
+            spWindow->GetDevice()->Finish2D();
 
             // Display result
             spWindow->GetDevice()->Swap();

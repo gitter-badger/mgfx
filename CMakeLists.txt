@@ -58,8 +58,8 @@ SET(GRAPHICS3D_CAMERA_SOURCES
 SET(GRAPHICS3D_GEOMETRY_SOURCES
     graphics3d/geometry/indexer.cpp
     graphics3d/geometry/indexer.h
-    graphics3d/geometry/tangentspace.cpp
-    graphics3d/geometry/tangentspace.h
+    graphics3d/geometry/vertex_spacial_sort.cpp
+    graphics3d/geometry/vertex_spacial_sort.h
     graphics3d/geometry/mesh.cpp
     graphics3d/geometry/mesh.h
 )

@@ -25,6 +25,7 @@
 #include "glm/glm/gtx/rotate_vector.hpp"
 #include "glm/glm/gtc/quaternion.hpp"
 #include "glm/glm/gtc/random.hpp"
+#include "glm/glm/gtx/string_cast.hpp"
 
 // Extra math stuff
 #include "mathutils.h"

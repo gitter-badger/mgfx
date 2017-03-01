@@ -214,14 +214,6 @@ std::shared_ptr<GLMesh> DeviceGL::BuildDeviceMesh(Mesh* pMesh)
         CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->normalID));
         CHECK_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*spPart->Normals.size(), spPart->Normals.data(), GL_STATIC_DRAW));
 
-        CHECK_GL(glGenBuffers(1, &spGLPart->tangentID));
-        CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->tangentID));
-        CHECK_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*spPart->Tangents.size(), spPart->Tangents.data(), GL_STATIC_DRAW));
-
-        CHECK_GL(glGenBuffers(1, &spGLPart->binormalID));
-        CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->binormalID));
-        CHECK_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*spPart->Binormals.size(), spPart->Binormals.data(), GL_STATIC_DRAW));
-
         CHECK_GL(glGenBuffers(1, &spGLPart->uvID));
         CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->uvID));
         CHECK_GL(glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2)*spPart->UVs.size(), spPart->UVs.data(), GL_STATIC_DRAW));
@@ -289,16 +281,8 @@ void DeviceGL::Draw(Mesh* pMesh)
         CHECK_GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0));
 
         CHECK_GL(glEnableVertexAttribArray(2));
-        CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->tangentID));
-        CHECK_GL(glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0));
-
-        CHECK_GL(glEnableVertexAttribArray(3));
-        CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->binormalID));
-        CHECK_GL(glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0));
-
-        CHECK_GL(glEnableVertexAttribArray(4));
         CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, spGLPart->uvID));
-        CHECK_GL(glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, 0, (void*)0));
+        CHECK_GL(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0));
 
         CHECK_GL(glActiveTexture(GL_TEXTURE0));
         if (spGLPart->textureID)
@@ -329,11 +313,9 @@ void DeviceGL::Draw(Mesh* pMesh)
     CHECK_GL(glDisableVertexAttribArray(0));
     CHECK_GL(glDisableVertexAttribArray(1));
     CHECK_GL(glDisableVertexAttribArray(2));
-    CHECK_GL(glDisableVertexAttribArray(3));
-    CHECK_GL(glDisableVertexAttribArray(4));
 }
 
-bool DeviceGL::Render()
+bool DeviceGL::Prepare3D()
 {
     SDL_GL_MakeCurrent(pSDLWindow, glContext);
     if (!m_spScene)
@@ -419,7 +401,7 @@ void DeviceGL::Prepare2D()
     glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
 }
 
-void DeviceGL::Render2D()
+void DeviceGL::Finish2D()
 {
     ImGui::Render();
     m_spImGuiDraw->RenderDrawLists(ImGui::GetDrawData());

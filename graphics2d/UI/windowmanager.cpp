@@ -84,7 +84,6 @@ glm::ivec4 WindowManager::GetWindowRect(Window* pWindow)
     return rect;
 }
 
-
 SDL_Window* WindowManager::GetSDLWindowFromEvent(SDL_Event& e)
 {
     switch (e.type)

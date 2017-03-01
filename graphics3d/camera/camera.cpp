@@ -2,6 +2,7 @@
 #include "Camera.h"
 #include "Timer.h"
 
+// Where camera is, what it is looking at.
 void Camera::SetPositionAndFocalPoint(const glm::vec3& pos, const glm::vec3& point)
 {
     // From
@@ -21,13 +22,14 @@ void Camera::SetPositionAndFocalPoint(const glm::vec3& pos, const glm::vec3& poi
     UpdateRightUp();
 }
 
+// The film/window size of the rendering
 void Camera::SetFilmSize(const glm::uvec2& size)
 {
     m_filmSize = size;
     m_aspectRatio = size.x / float(size.y);
 }
 
-
+// Update the camera based on the time passed.
 bool Camera::Update()
 {
     // The half-width of the viewport, in world space
@@ -97,6 +99,7 @@ Ray Camera::GetWorldRay(const glm::vec2& imageSample)
     return Ray{ lensPoint, dir };
 }
 
+// Walk in a given direction on the view/right/up vectors
 void Camera::Walk(glm::vec3 planes)
 {
     planes *= 2.0f;
@@ -105,6 +108,7 @@ void Camera::Walk(glm::vec3 planes)
     m_walkDelta += m_up * planes.y;
 }
 
+// Walk towards the focal point
 void Camera::Dolly(float distance)
 {
     m_positionDelta += m_viewDirection * distance;
@@ -116,6 +120,7 @@ void Camera::Orbit(const glm::vec2& angle)
     m_orbitDelta += angle;
 }
 
+// Update the walk status
 void Camera::UpdateWalk(int64_t timeDelta)
 {
     const float settlingTimeMs = 50;
@@ -171,13 +176,15 @@ void Camera::UpdateOrbit(int64_t timeDelta)
     UpdateRightUp();
 }
 
-// Matrices
+// For setting up 3D scenes
+// The current lookat matrix
 glm::mat4 Camera::GetLookAt() const
 {
     glm::vec3 up = glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f) * m_orientation);
     return glm::lookAt(m_position, m_focalPoint, up);
 }
 
+// The current projection matrix
 glm::mat4 Camera::GetProjection() const
 {
     // TODO; ZClip
