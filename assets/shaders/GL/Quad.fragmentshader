@@ -13,5 +13,5 @@ void main()
 {
     // Sample the diffuse map
     vec4 diffuse = texture(albedo_sampler, frag_tex_coord).rgba;
-    color = diffuse * frag_color;
+    color = frag_color * diffuse;
 }

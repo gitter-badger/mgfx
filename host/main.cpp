@@ -55,7 +55,7 @@ void DrawWindowImage(Window* pWindow, uint32_t quadID)
             }
             else
             {
-                pixel = glm::u8vec4(25);
+                pixel = glm::u8vec4(x, x, x, 255);
             }
         }
     }
@@ -72,6 +72,10 @@ int main(int, char**)
         LOG(ERROR) << SDL_GetError();
         return -1;
     }
+
+    fs::path basePath = SDL_GetBasePath();
+    el::Configurations conf((basePath / "logger.conf").string().c_str());
+    el::Loggers::reconfigureAllLoggers(conf);
 
     auto spScene = LoadScene();
 
@@ -116,10 +120,12 @@ int main(int, char**)
                 spScene->SetCurrentCamera(spWindow->GetCamera().get());
 
                 // 3D Rendering prep
-                spWindow->GetDevice()->Prepare3D();
+                spWindow->GetDevice()->Begin3D();
 
                 // Draw the scene
                 spScene->Render(spWindow->GetDevice().get());
+
+                spWindow->GetDevice()->End3D();
             }
             else if (AppSettings::Instance().GetMode() == AppMode::Display2D)
             {

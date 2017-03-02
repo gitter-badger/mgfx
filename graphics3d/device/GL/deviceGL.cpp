@@ -24,8 +24,7 @@ void APIENTRY DebugCB(GLenum source, GLenum type, GLuint id, GLenum severity, GL
         }
         else if (type == GL_DEBUG_TYPE_ERROR)
         {
-            LOG(ERROR) << "GL: " << message;
-            DebugBreak();
+            LOG(ERROR) << "GLError: " << message;
         }
         else
         {
@@ -75,7 +74,7 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
 
     m_spImGuiDraw = std::make_shared<ImGuiSDL_GL3>();
 
-    SDL_GL_SetSwapInterval(0);
+    //SDL_GL_SetSwapInterval(0);
 
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders(GetMediaPath("shaders/GL/StandardShading.vertexshader").c_str(), GetMediaPath("shaders/GL/StandardShading.fragmentshader").c_str());
@@ -314,10 +313,6 @@ bool DeviceGL::Begin2D()
 {
     SDL_GL_MakeCurrent(pSDLWindow, glContext);
 
-    // For sanity, lets just clear the backbuffer to grey
-    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     int w, h;
     SDL_GetWindowSize(pSDLWindow, &w, &h);
     glViewport(0, 0, w, h);
@@ -352,7 +347,7 @@ void DeviceGL::End2D()
     m_spQuads->EndDraw();
 }
 
-bool DeviceGL::Prepare3D()
+bool DeviceGL::Begin3D()
 {
     SDL_GL_MakeCurrent(pSDLWindow, glContext);
     if (!m_spScene)
@@ -420,10 +415,17 @@ bool DeviceGL::Prepare3D()
     return true;
 }
 
+void DeviceGL::End3D()
+{
+    /* Nothing to do yet */
+}
+
 void DeviceGL::Cleanup()
 {
     // Cleanup IMGui and device
     SDL_GL_MakeCurrent(pSDLWindow, glContext);
+
+    m_spQuads.reset();
 
     m_spImGuiDraw->Shutdown();
     m_spImGuiDraw.reset();

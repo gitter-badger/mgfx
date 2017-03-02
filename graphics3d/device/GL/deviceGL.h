@@ -40,8 +40,10 @@ public:
     DeviceGL();
     ~DeviceGL();
     virtual bool Init(std::shared_ptr<Scene>& spScene) override;
-    virtual bool Prepare3D() override;
+    virtual bool Begin3D() override;
+    virtual void End3D() override;
     
+    // 2D Rendering functions
     virtual bool Begin2D() override;
     uint32_t CreateQuad() override;
     virtual void DestroyQuad(uint32_t id) override;
@@ -100,7 +102,15 @@ inline void CheckGL(const char* call, const char* file, int line)
     GLenum err = glGetError();
     if (err != GL_NO_ERROR)
     {
-        LOG(ERROR) << std::hex << err << file << ":" << line << call;
+        LOG(ERROR) << std::hex << err << ", " << file << "(" << line << "): " << call;
+#if (_MSC_VER)
+        DebugBreak();
+#endif
     }
 }
+
+#ifdef _DEBUG
 #define CHECK_GL(stmt) do { stmt; CheckGL(#stmt, __FILE__, __LINE__);  } while (0)
+#else
+#define CHECK_GL(stmt) do { stmt; } while (0)
+#endif

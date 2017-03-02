@@ -151,6 +151,7 @@ opengl32.lib
 )
 
 copy_files(lib/sdl/${PROCESSOR_ARCH}/*.dll ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
+copy_files(logger.conf ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
 
 add_custom_target(copy-assets ALL
     COMMAND cmake -E copy_directory ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:GLShell>/assets

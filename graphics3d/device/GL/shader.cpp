@@ -25,7 +25,7 @@ uint32_t LoadShaders(const fs::path& vertex_file_path, const fs::path& fragment_
     }
 
     GLint Result = GL_FALSE;
-    int InfoLogLength;
+    int InfoLogLength = 0;
 
     // Compile Vertex Shader
     LOG(INFO) << "Compiling shader : " << vertex_file_path;

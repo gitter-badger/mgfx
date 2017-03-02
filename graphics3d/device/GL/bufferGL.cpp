@@ -2,9 +2,11 @@
 #include "deviceGL.h"
 #include "bufferGL.h"
 
-BufferGL::BufferGL(DeviceGL* pDevice, int size )
+// A Simple buffer - usually geometry or index
+BufferGL::BufferGL(DeviceGL* pDevice, int size, uint32_t bufferType)
     : m_pDevice(pDevice),
-    m_size(size)
+    m_size(size),
+    m_bufferType(bufferType)
 {
     CHECK_GL(glGenBuffers(1, &m_bufferID));
 
@@ -33,13 +35,14 @@ void BufferGL::EnsureSize(uint32_t size)
     // Force it to grow
     if (size > m_size)
     {
+        Bind();
         CHECK_GL(glBufferData(GetBufferType(), size, NULL, GL_DYNAMIC_DRAW));
         m_size = size;
         m_offset = 0;
     }
 }
 
-void* BufferGL::Map(unsigned int num, unsigned int typeSize, unsigned int& offset, bool reset)
+void* BufferGL::Map(unsigned int num, unsigned int typeSize, unsigned int& offset)
 {
     assert(!m_mapped);
     if (m_mapped)
@@ -57,12 +60,16 @@ void* BufferGL::Map(unsigned int num, unsigned int typeSize, unsigned int& offse
     Bind();
 
     uint32_t byteSize = num * typeSize;
-    if (reset || ((m_offset + byteSize) > m_size))
+
+    EnsureSize(byteSize);
+
+    if (m_reset || ((m_offset + byteSize) > m_size))
     {
         offset = 0;
         m_offset = byteSize;
 
-        return glMapBufferRange(GetBufferType(), 0, byteSize, GL_WRITE_ONLY | GL_MAP_INVALIDATE_BUFFER_BIT);
+        m_reset = false;
+        return glMapBufferRange(GetBufferType(), 0, byteSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
     }
     else
     {
