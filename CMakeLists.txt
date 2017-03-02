@@ -17,8 +17,6 @@ else()
 endif()
 
 SET(APP_SOURCES
-    app/renderUI.cpp
-    app/renderUI.h
     app/settings.cpp
     app/settings.h
 )

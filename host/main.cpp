@@ -2,7 +2,6 @@
 #include "common.h"
 
 #include <GL/deviceGL.h>
-#include "app/renderUI.h"
 #include "app/settings.h"
 
 #include "camera/camera.h"
@@ -31,7 +30,7 @@ std::shared_ptr<Scene> LoadScene()
     return spScene;
 }
 
-void DrawWindowImage(Window* pWindow, uint32_t quadID)
+void DrawWithCPU(Window* pWindow, uint32_t quadID)
 {
     auto size = pWindow->GetClientRect();
 
@@ -60,8 +59,59 @@ void DrawWindowImage(Window* pWindow, uint32_t quadID)
         }
     }
 
+    // Use the graphics hardware to show our result
     pWindow->GetDevice()->UpdateQuad(quadID, bitmapData, size);
     pWindow->GetDevice()->DrawQuad(quadID, glm::vec4(0, 0, size.x, size.y));
+}
+
+// This is where we show our app GUI.
+void ShowGUI(Window* pWindow,
+    Scene* pScene)
+{
+    static bool show_test_window = false;
+
+    int mode = int(AppSettings::Instance().GetMode());
+    if (ImGui::Combo("Mode", &mode, "2D\0" "3D\0\0"))
+    {
+        AppSettings::Instance().SetMode(AppMode(mode));
+        return;
+    }
+
+    if (AppSettings::Instance().GetMode() == AppMode::Display3D)
+    {
+        auto pCamera = pWindow->GetCamera();
+        if (pCamera)
+        {
+            static float f = pCamera->GetFieldOfView();
+            if (ImGui::SliderFloat("Field Of View", &f, 20.0f, 90.0f))
+            {
+                pCamera->SetFieldOfView(f);
+            }
+        }
+
+        auto clear_color = pScene->GetClearColor();
+        if (ImGui::ColorEdit3("clear color", (float*)&clear_color))
+        {
+            pScene->SetClearColor(clear_color);
+        }
+    }
+
+    // For testing the GUI features
+    if (ImGui::Button("UI Examples"))
+    {
+        show_test_window ^= 1;
+    }
+
+    ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+    // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
+    if (show_test_window)
+    {
+        ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
+        ImGui::ShowTestWindow(&show_test_window);
+    }
+
+    ImGui::Render();
 }
 
 int main(int, char**)
@@ -79,13 +129,6 @@ int main(int, char**)
 
     auto spScene = LoadScene();
 
-    // The app's 2D UI
-    RenderUI renderUI;
-    if (!renderUI.Init(spScene))
-    {
-        return -1;
-    }
-
     uint32_t quad = 0;
 
     // OpenGL
@@ -94,7 +137,7 @@ int main(int, char**)
     {
         WindowManager::Instance().AddWindow(pDevice->GetSDLWindow(), pDevice);
         WindowManager::Instance().GetWindow(pDevice->GetSDLWindow())->GetCamera()->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
-    
+
         quad = pDevice->CreateQuad();
     }
     pDevice = nullptr;
@@ -119,7 +162,7 @@ int main(int, char**)
                 // Set the current camera
                 spScene->SetCurrentCamera(spWindow->GetCamera().get());
 
-                // 3D Rendering prep
+                // 3D Rendering
                 spWindow->GetDevice()->Begin3D();
 
                 // Draw the scene
@@ -131,16 +174,15 @@ int main(int, char**)
             {
                 spWindow->GetDevice()->Begin2D();
 
-                DrawWindowImage(spWindow.get(), quad);
+                DrawWithCPU(spWindow.get(), quad);
 
                 spWindow->GetDevice()->End2D();
             }
 
-            // 2D Rendering prep
+            // Finally, the GUI
             spWindow->GetDevice()->BeginGUI();
 
-            // Draw the 2D
-            renderUI.Render(spWindow.get());
+            ShowGUI(spWindow.get(), spScene.get());
 
             spWindow->GetDevice()->EndGUI();
 
