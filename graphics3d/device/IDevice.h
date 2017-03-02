@@ -15,9 +15,15 @@ struct IDevice
     virtual bool Prepare3D() = 0;
 
     // Render the scene with 2D
-    virtual bool Prepare2D() = 0;
+    virtual bool Begin2D() = 0;
 
-    virtual void Draw2D(const std::vector<glm::u8vec4>& data, const glm::uvec2& size) = 0;
+    // Quads
+    virtual uint32_t CreateQuad() = 0; 
+    virtual void DestroyQuad(uint32_t id) = 0;
+    virtual void UpdateQuad(uint32_t id, const std::vector<glm::u8vec4>& quadData, const glm::uvec2& size) = 0;
+    virtual void DrawQuad(uint32_t id, const glm::vec4& target) = 0;
+
+    virtual void End2D() = 0;
 
     // For displaying the overlay GUI 
     virtual void BeginGUI() = 0;

@@ -30,6 +30,10 @@ SET(GRAPHICS3D_DEVICE_SOURCES
 SET(GRAPHICS3D_DEVICEGL_SOURCES
     graphics3d/device/GL/deviceGL.cpp
     graphics3d/device/GL/deviceGL.h
+    graphics3d/device/GL/quadGL.cpp
+    graphics3d/device/GL/quadGL.h
+    graphics3d/device/GL/bufferGL.cpp
+    graphics3d/device/GL/bufferGL.h
     graphics3d/device/GL/gl3w.c
     graphics3d/device/GL/glcorearb.h
     graphics3d/device/GL/shader.cpp

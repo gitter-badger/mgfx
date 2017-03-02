@@ -1,5 +1,6 @@
 #include "common.h"
 #include "device/GL/deviceGL.h"
+#include "device/GL/quadGL.h"
 #include "camera/camera.h"
 #include "scene/scene.h"
 #include "geometry/mesh.h"
@@ -76,15 +77,6 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
 
     SDL_GL_SetSwapInterval(0);
 
-    // Enable depth test
-    CHECK_GL(glEnable(GL_DEPTH_TEST));
-
-    // Accept fragment if it closer to the camera than the former one
-    CHECK_GL(glDepthFunc(GL_LESS));
-
-    // Cull triangles which normal is not towards the camera
-    CHECK_GL(glEnable(GL_CULL_FACE));
-
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders(GetMediaPath("shaders/GL/StandardShading.vertexshader").c_str(), GetMediaPath("shaders/GL/StandardShading.fragmentshader").c_str());
 
@@ -113,6 +105,7 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
     // Setup ImGui binding
     m_spImGuiDraw->Init(pSDLWindow);
 
+    m_spQuads = std::make_shared<QuadGL>(this);
     return true;
 }
 
@@ -317,7 +310,7 @@ void DeviceGL::Draw(Mesh* pMesh)
     CHECK_GL(glDisableVertexAttribArray(2));
 }
 
-bool DeviceGL::Prepare2D()
+bool DeviceGL::Begin2D()
 {
     SDL_GL_MakeCurrent(pSDLWindow, glContext);
 
@@ -325,22 +318,38 @@ bool DeviceGL::Prepare2D()
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glDisable(GL_BLEND);
-
     int w, h;
     SDL_GetWindowSize(pSDLWindow, &w, &h);
     glViewport(0, 0, w, h);
 
-    // Use our shader
-    CHECK_GL(glUseProgram(0));
+    m_spQuads->BeginDraw(100);
 
     return true;
 }
 
-void DeviceGL::Draw2D(const std::vector<glm::u8vec4>& data, const glm::uvec2& size)
+uint32_t DeviceGL::CreateQuad()
 {
-    CHECK_GL(glBindTexture(GL_TEXTURE_2D, BackBufferTextureID));
-    CHECK_GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, &data[0]));
+    return m_spQuads->CreateQuad();
+}
+
+void DeviceGL::DestroyQuad(uint32_t id)
+{
+    m_spQuads->DestroyQuad(id);
+}
+
+void DeviceGL::UpdateQuad(uint32_t id, const std::vector<glm::u8vec4>& quadData, const glm::uvec2& size)
+{
+    m_spQuads->UpdateQuad(id, quadData, size);
+}
+
+void DeviceGL::DrawQuad(uint32_t id, const glm::vec4& target)
+{
+    m_spQuads->DrawQuad(id, target);
+}
+
+void DeviceGL::End2D()
+{
+    m_spQuads->EndDraw();
 }
 
 bool DeviceGL::Prepare3D()
@@ -360,6 +369,17 @@ bool DeviceGL::Prepare3D()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // Enable depth test
+    CHECK_GL(glEnable(GL_DEPTH_TEST));
+
+    // Accept fragment if it closer to the camera than the former one
+    CHECK_GL(glDepthFunc(GL_LESS));
+
+    // Cull triangles which normal is not towards the camera
+    CHECK_GL(glEnable(GL_CULL_FACE));
+
+    // Get a handle for our "LightPosition" uniform
+    glUseProgram(programID);
     auto pCamera = m_spScene->GetCurrentCamera();
     if (pCamera)
     {

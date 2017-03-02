@@ -31,7 +31,7 @@ std::shared_ptr<Scene> LoadScene()
     return spScene;
 }
 
-void DrawWindowImage(Window* pWindow)
+void DrawWindowImage(Window* pWindow, uint32_t quadID)
 {
     auto size = pWindow->GetClientRect();
 
@@ -60,7 +60,8 @@ void DrawWindowImage(Window* pWindow)
         }
     }
 
-    pWindow->GetDevice()->Draw2D(bitmapData, size);
+    pWindow->GetDevice()->UpdateQuad(quadID, bitmapData, size);
+    pWindow->GetDevice()->DrawQuad(quadID, glm::vec4(0, 0, size.x, size.y));
 }
 
 int main(int, char**)
@@ -81,12 +82,16 @@ int main(int, char**)
         return -1;
     }
 
+    uint32_t quad = 0;
+
     // OpenGL
     auto pDevice = std::static_pointer_cast<IDevice>(std::make_shared<DeviceGL>());
     if (pDevice->Init(spScene))
     {
         WindowManager::Instance().AddWindow(pDevice->GetSDLWindow(), pDevice);
         WindowManager::Instance().GetWindow(pDevice->GetSDLWindow())->GetCamera()->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
+    
+        quad = pDevice->CreateQuad();
     }
     pDevice = nullptr;
 
@@ -118,9 +123,11 @@ int main(int, char**)
             }
             else if (AppSettings::Instance().GetMode() == AppMode::Display2D)
             {
-                spWindow->GetDevice()->Prepare2D();
+                spWindow->GetDevice()->Begin2D();
 
-                DrawWindowImage(spWindow.get());
+                DrawWindowImage(spWindow.get(), quad);
+
+                spWindow->GetDevice()->End2D();
             }
 
             // 2D Rendering prep

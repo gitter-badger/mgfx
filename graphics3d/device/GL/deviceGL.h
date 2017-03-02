@@ -11,6 +11,7 @@ class Camera;
 class Mesh;
 class Scene;
 class Window;
+class QuadGL;
 struct WindowData;
 struct MeshPart;
 
@@ -40,8 +41,14 @@ public:
     ~DeviceGL();
     virtual bool Init(std::shared_ptr<Scene>& spScene) override;
     virtual bool Prepare3D() override;
-    virtual bool Prepare2D() override;
-    virtual void Draw2D(const std::vector<glm::u8vec4>& data, const glm::uvec2& size) override;
+    
+    virtual bool Begin2D() override;
+    uint32_t CreateQuad() override;
+    virtual void DestroyQuad(uint32_t id) override;
+    virtual void UpdateQuad(uint32_t id, const std::vector<glm::u8vec4>& quadData, const glm::uvec2& size) override;
+    virtual void DrawQuad(uint32_t id, const glm::vec4& target) override;
+    virtual void End2D() override;
+
     virtual void BeginGUI() override;
     virtual void EndGUI() override;
     virtual void Cleanup() override;
@@ -85,6 +92,7 @@ private:
 
     uint32_t BackBufferTextureID = 0;
 
+    std::shared_ptr<QuadGL> m_spQuads;
 };
 
 inline void CheckGL(const char* call, const char* file, int line)
