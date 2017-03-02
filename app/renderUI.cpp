@@ -4,6 +4,7 @@
 #include "scene/scene.h"
 #include "ui/windowmanager.h"
 #include "ui/window.h"
+#include "app/settings.h"
 
 bool RenderUI::Init(std::shared_ptr<Scene>& spScene)
 {
@@ -30,6 +31,12 @@ bool RenderUI::Render(Window* pWindow)
         {
             pCamera->SetFieldOfView(f);
         }
+    }
+
+    int mode = int(AppSettings::Instance().GetMode());
+    if (ImGui::Combo("Mode", &mode, "2D\0" "3D\0\0"))
+    {
+        AppSettings::Instance().SetMode(AppMode(mode));
     }
 
     if (ImGui::ColorEdit3("clear color", (float*)&clear_color))

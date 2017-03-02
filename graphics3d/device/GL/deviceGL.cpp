@@ -74,7 +74,7 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
 
     m_spImGuiDraw = std::make_shared<ImGuiSDL_GL3>();
 
-    //    SDL_GL_SetSwapInterval(0);
+    SDL_GL_SetSwapInterval(0);
 
     // Enable depth test
     CHECK_GL(glEnable(GL_DEPTH_TEST));
@@ -107,6 +107,8 @@ bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
 
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
+
+    glGenTextures(1, &BackBufferTextureID);
 
     // Setup ImGui binding
     m_spImGuiDraw->Init(pSDLWindow);
@@ -315,6 +317,32 @@ void DeviceGL::Draw(Mesh* pMesh)
     CHECK_GL(glDisableVertexAttribArray(2));
 }
 
+bool DeviceGL::Prepare2D()
+{
+    SDL_GL_MakeCurrent(pSDLWindow, glContext);
+
+    // For sanity, lets just clear the backbuffer to grey
+    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glDisable(GL_BLEND);
+
+    int w, h;
+    SDL_GetWindowSize(pSDLWindow, &w, &h);
+    glViewport(0, 0, w, h);
+
+    // Use our shader
+    CHECK_GL(glUseProgram(0));
+
+    return true;
+}
+
+void DeviceGL::Draw2D(const std::vector<glm::u8vec4>& data, const glm::uvec2& size)
+{
+    CHECK_GL(glBindTexture(GL_TEXTURE_2D, BackBufferTextureID));
+    CHECK_GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, &data[0]));
+}
+
 bool DeviceGL::Prepare3D()
 {
     SDL_GL_MakeCurrent(pSDLWindow, glContext);
@@ -369,8 +397,6 @@ bool DeviceGL::Prepare3D()
     glActiveTexture(GL_TEXTURE1);
     glUniform1i(TextureIDBump, 1);
 
-    m_spScene->Render(this);
-
     return true;
 }
 
@@ -384,6 +410,8 @@ void DeviceGL::Cleanup()
 
     DestroyDeviceMeshes();
 
+    glDeleteTextures(1, &BackBufferTextureID);
+
     glDeleteVertexArrays(1, &VertexArrayID);
     glDeleteProgram(programID);
 
@@ -393,7 +421,7 @@ void DeviceGL::Cleanup()
 }
 
 // Prepare the device for doing 2D Rendering using ImGUI
-void DeviceGL::Prepare2D()
+void DeviceGL::BeginGUI()
 {
     SDL_GL_MakeCurrent(pSDLWindow, glContext);
     m_spImGuiDraw->NewFrame(pSDLWindow);
@@ -401,7 +429,7 @@ void DeviceGL::Prepare2D()
     glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
 }
 
-void DeviceGL::Finish2D()
+void DeviceGL::EndGUI()
 {
     ImGui::Render();
     m_spImGuiDraw->RenderDrawLists(ImGui::GetDrawData());

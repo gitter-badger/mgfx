@@ -19,6 +19,8 @@ endif()
 SET(APP_SOURCES
     app/renderUI.cpp
     app/renderUI.h
+    app/settings.cpp
+    app/settings.h
 )
 
 SET(GRAPHICS3D_DEVICE_SOURCES

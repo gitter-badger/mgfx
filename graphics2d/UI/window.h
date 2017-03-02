@@ -25,6 +25,8 @@ public:
     void SetUpdateTime(double time) { m_lastTime = time; }
     double GetUpdateTime() const { return m_lastTime; }
 
+    glm::uvec2 GetClientRect() const;
+
 private:
     double m_lastTime = 0.0f;
     float m_mouseWheel = 0.0f;

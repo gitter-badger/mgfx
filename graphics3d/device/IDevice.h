@@ -11,14 +11,17 @@ struct IDevice
     // Create the device, tell it the scene
     virtual bool Init(std::shared_ptr<Scene>& spScene) = 0;
 
-    // Render the scene
+    // Render the scene with 3D
     virtual bool Prepare3D() = 0;
 
-    // Prepare the device state for ImGUI/2D rendering
-    virtual void Prepare2D() = 0;
+    // Render the scene with 2D
+    virtual bool Prepare2D() = 0;
 
-    // Complete the 2D Rendering
-    virtual void Finish2D() = 0;
+    virtual void Draw2D(const std::vector<glm::u8vec4>& data, const glm::uvec2& size) = 0;
+
+    // For displaying the overlay GUI 
+    virtual void BeginGUI() = 0;
+    virtual void EndGUI() = 0;
 
     // Cleanup the device before shutting down
     virtual void Cleanup() = 0;
@@ -33,5 +36,5 @@ struct IDevice
     virtual void Draw(Mesh* pMesh) = 0;
 
     // Get the window associated with the device
-    virtual SDL_Window* GetWindow() const = 0;
+    virtual SDL_Window* GetSDLWindow() const = 0;
 };

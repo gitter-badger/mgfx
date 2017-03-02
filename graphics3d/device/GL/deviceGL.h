@@ -40,12 +40,14 @@ public:
     ~DeviceGL();
     virtual bool Init(std::shared_ptr<Scene>& spScene) override;
     virtual bool Prepare3D() override;
-    virtual void Prepare2D() override;
-    virtual void Finish2D() override;
+    virtual bool Prepare2D() override;
+    virtual void Draw2D(const std::vector<glm::u8vec4>& data, const glm::uvec2& size) override;
+    virtual void BeginGUI() override;
+    virtual void EndGUI() override;
     virtual void Cleanup() override;
     virtual void ProcessEvent(SDL_Event& event) override;
     virtual void Swap() override;
-    virtual SDL_Window* GetWindow() const override { return pSDLWindow; }
+    virtual SDL_Window* GetSDLWindow() const override { return pSDLWindow; }
 
     virtual void Draw(Mesh* pMesh) override;
 
@@ -80,6 +82,8 @@ private:
 
     uint32_t CameraID = 0;
     uint32_t LightDirID = 0;
+
+    uint32_t BackBufferTextureID = 0;
 
 };
 

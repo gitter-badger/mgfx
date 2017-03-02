@@ -3,6 +3,7 @@
 
 #include <GL/deviceGL.h>
 #include "app/renderUI.h"
+#include "app/settings.h"
 
 #include "camera/camera.h"
 #include "scene/scene.h"
@@ -30,6 +31,38 @@ std::shared_ptr<Scene> LoadScene()
     return spScene;
 }
 
+void DrawWindowImage(Window* pWindow)
+{
+    auto size = pWindow->GetClientRect();
+
+    static std::vector<glm::u8vec4> bitmapData;
+    bitmapData.resize(size.x * size.y);
+
+    auto PixelData = [&](int x, int y) { return bitmapData[y * size.x + x]; };
+
+    static int currentX = 0;
+    currentX++;
+    currentX = currentX % size.x;
+
+    for (uint32_t y = 0; y < size.y; y++)
+    {
+        for (uint32_t x = 0; x < size.x; x++)
+        {
+            auto& pixel = bitmapData[y * size.x + x];
+            if (currentX == x)
+            {
+                pixel = glm::u8vec4(255);
+            }
+            else
+            {
+                pixel = glm::u8vec4(25);
+            }
+        }
+    }
+
+    pWindow->GetDevice()->Draw2D(bitmapData, size);
+}
+
 int main(int, char**)
 {
     // Setup SDL
@@ -52,20 +85,10 @@ int main(int, char**)
     auto pDevice = std::static_pointer_cast<IDevice>(std::make_shared<DeviceGL>());
     if (pDevice->Init(spScene))
     {
-        WindowManager::Instance().AddWindow(pDevice->GetWindow(), pDevice);
-        WindowManager::Instance().GetWindow(pDevice->GetWindow())->GetCamera()->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
+        WindowManager::Instance().AddWindow(pDevice->GetSDLWindow(), pDevice);
+        WindowManager::Instance().GetWindow(pDevice->GetSDLWindow())->GetCamera()->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
     }
     pDevice = nullptr;
-
-    /*
-    pDevice = std::static_pointer_cast<IDevice>(std::make_shared<DeviceGL>());
-    if (pDevice->Init(spScene))
-    {
-        WindowManager::Instance().AddWindow(pDevice->GetWindow(), pDevice);
-        WindowManager::Instance().GetWindow(pDevice->GetWindow())->GetCamera()->SetPositionAndFocalPoint(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f));
-    }
-    pDevice = nullptr;
-    */
 
     // Main loop
     bool done = false;
@@ -82,22 +105,31 @@ int main(int, char**)
             // Setup window
             spWindow->PreRender();
 
-            // Set the current camera
-            spScene->SetCurrentCamera(spWindow->GetCamera().get());
+            if (AppSettings::Instance().GetMode() == AppMode::Display3D)
+            {
+                // Set the current camera
+                spScene->SetCurrentCamera(spWindow->GetCamera().get());
 
-            // 3D Rendering prep
-            spWindow->GetDevice()->Prepare3D();
+                // 3D Rendering prep
+                spWindow->GetDevice()->Prepare3D();
 
-            // Draw the scene
-            spScene->Render(spWindow->GetDevice().get());
+                // Draw the scene
+                spScene->Render(spWindow->GetDevice().get());
+            }
+            else if (AppSettings::Instance().GetMode() == AppMode::Display2D)
+            {
+                spWindow->GetDevice()->Prepare2D();
+
+                DrawWindowImage(spWindow.get());
+            }
 
             // 2D Rendering prep
-            spWindow->GetDevice()->Prepare2D();
+            spWindow->GetDevice()->BeginGUI();
 
             // Draw the 2D
             renderUI.Render(spWindow.get());
 
-            spWindow->GetDevice()->Finish2D();
+            spWindow->GetDevice()->EndGUI();
 
             // Display result
             spWindow->GetDevice()->Swap();

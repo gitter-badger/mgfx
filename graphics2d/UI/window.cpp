@@ -1,6 +1,7 @@
 #include "Common.h"
 #include "ui/window.h"
 #include "ui/manipulator.h"
+#include "graphics3d/device/IDevice.h"
 #include "camera/camera.h"
 
 Window::Window(std::shared_ptr<IDevice>& spDevice)
@@ -21,4 +22,12 @@ void Window::PreRender()
     {
         m_spCamera->Update();
     }
+}
+
+glm::uvec2 Window::GetClientRect() const
+{
+    auto pSDLWindow = m_spDevice->GetSDLWindow();
+    int w, h;
+    SDL_GetWindowSize(pSDLWindow, &w, &h);
+    return glm::uvec2(w, h);
 }
