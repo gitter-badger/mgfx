@@ -39,7 +39,7 @@ class DeviceGL : public IDevice
 public:
     DeviceGL();
     ~DeviceGL();
-    virtual bool Init(std::shared_ptr<Scene>& spScene) override;
+    virtual bool Init(const std::shared_ptr<Scene>& spScene) override;
     virtual bool Begin3D() override;
     virtual void End3D() override;
     

@@ -107,7 +107,7 @@ bool ImOrient::Draw(const char* label)
 
     bool value_changed = false;
 
-    ImGui::Text(label);
+    ImGui::Text("%s", label);
     // Summary 
     if (m_AAMode)
     {

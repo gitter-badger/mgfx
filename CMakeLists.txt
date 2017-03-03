@@ -1,20 +1,16 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
+
+set (CMAKE_CXX_STANDARD 11)
+
 PROJECT (GLShell)
 
 SET (CMAKE_MODULE_PATH
     ${CMAKE_CURRENT_LIST_DIR}/cmake
 )
 
+INCLUDE(target_all)
 INCLUDE(copy_files)
 #INCLUDE(cotire)
-
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-  set(ARCH_64 TRUE)
-  set(PROCESSOR_ARCH "x64")
-else()
-  set(ARCH_64 FALSE)
-  set(PROCESSOR_ARCH "x86")
-endif()
 
 SET(APP_SOURCES
     app/settings.cpp
@@ -136,17 +132,13 @@ INCLUDE_DIRECTORIES(imgui
     ) 
 
 # Create the library
+if (TARGET_PC)
 ADD_EXECUTABLE (${PROJECT_NAME} WIN32 ${SOURCES} ${LIBRARY_SOURCES})
-set_target_properties(${PROJECT_NAME} PROPERTIES COTIRE_CXX_UNITY_SOURCE_INIT "common/common.cpp")
-set_target_properties(${PROJECT_NAME} PROPERTIES COTIRE_CXX_PREFIX_HEADER_INIT "common/common.h")
-set_target_properties(${PROJECT_NAME} PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
-#COTIRE(${PROJECT_NAME})
+else ()
+ADD_EXECUTABLE (${PROJECT_NAME} WIN32 ${SOURCES} ${LIBRARY_SOURCES})
+endif()
 
-TARGET_LINK_LIBRARIES (${PROJECT_NAME}
-${CMAKE_CURRENT_SOURCE_DIR}/lib/sdl/lib/${PROCESSOR_ARCH}/SDL2.lib
-${CMAKE_CURRENT_SOURCE_DIR}/lib/sdl/lib/${PROCESSOR_ARCH}/SDL2main.lib
-opengl32.lib
-)
+TARGET_LINK_LIBRARIES (${PROJECT_NAME} ${PLATFORM_LINKLIBS})
 
 copy_files(lib/sdl/${PROCESSOR_ARCH}/*.dll ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
 copy_files(logger.conf ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )

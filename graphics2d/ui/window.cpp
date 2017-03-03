@@ -1,10 +1,10 @@
-#include "Common.h"
+#include "common.h"
 #include "ui/window.h"
 #include "ui/manipulator.h"
 #include "graphics3d/device/IDevice.h"
 #include "camera/camera.h"
 
-Window::Window(std::shared_ptr<IDevice>& spDevice)
+Window::Window(const std::shared_ptr<IDevice>& spDevice)
     : m_spDevice(spDevice)
 {
 

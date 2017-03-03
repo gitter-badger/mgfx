@@ -43,7 +43,7 @@ DeviceGL::~DeviceGL()
 
 }
 
-bool DeviceGL::Init(std::shared_ptr<Scene>& pScene)
+bool DeviceGL::Init(const std::shared_ptr<Scene>& pScene)
 {
     m_spScene = pScene;
 

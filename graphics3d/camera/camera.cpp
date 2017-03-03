@@ -1,6 +1,6 @@
-#include "Common.h"
-#include "Camera.h"
-#include "Timer.h"
+#include "common.h"
+#include "camera.h"
+#include "timer.h"
 
 // Where camera is, what it is looking at.
 void Camera::SetPositionAndFocalPoint(const glm::vec3& pos, const glm::vec3& point)

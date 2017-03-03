@@ -10,16 +10,16 @@ class Manipulator;
 class Window
 {
 public:
-    Window(std::shared_ptr<IDevice>& spDevice);
+    Window(const std::shared_ptr<IDevice>& spDevice);
 
     void PreRender();
 
     const std::shared_ptr<IDevice>& GetDevice() const { return m_spDevice; }
 
-    void SetCamera(std::shared_ptr<Camera>& camera) { m_spCamera = camera; }
+    void SetCamera(const std::shared_ptr<Camera>& camera) { m_spCamera = camera; }
     const std::shared_ptr<Camera>& GetCamera() const { return m_spCamera; }
 
-    void SetManipulator(std::shared_ptr<Manipulator>& manip) { m_spManipulator = manip; }
+    void SetManipulator(const std::shared_ptr<Manipulator>& manip) { m_spManipulator = manip; }
     const std::shared_ptr<Manipulator>& GetManipulator() const { return m_spManipulator; }
 
     void SetUpdateTime(double time) { m_lastTime = time; }

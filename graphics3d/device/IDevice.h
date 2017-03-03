@@ -9,7 +9,7 @@ struct WindowData;
 struct IDevice
 {
     // Create the device, tell it the scene
-    virtual bool Init(std::shared_ptr<Scene>& spScene) = 0;
+    virtual bool Init(const std::shared_ptr<Scene>& spScene) = 0;
 
     // Render the scene with 3D
     virtual bool Begin3D() = 0;
