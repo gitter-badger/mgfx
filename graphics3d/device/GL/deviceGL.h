@@ -3,7 +3,6 @@
 
 #include "gl3w.h"
 #include "imguisdl_gl3.h"
-#include "gl3w.h"
 #include "shader.h"
 #include "IDevice.h"
 
