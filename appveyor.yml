@@ -56,6 +56,6 @@ after_build:
   # set compiler var
   - if "%generator%"=="Visual Studio 14" (set COMPILER="VC14")
   # switch to project build folder and zip "tutorials" folder
-  - cd C:\projects\build\Release
-  - 7z a -tzip -mx9 "mgfx-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip" mgfx 
+  - cd C:\projects\build
+  - 7z a -tzip -mx9 "mgfx-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip" Release
   - appveyor PushArtifact "mgfx-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip"
