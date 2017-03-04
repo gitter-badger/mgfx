@@ -1,5 +1,5 @@
 # MGFX
-https://travis-ci.org/cmaughan/mgfx.svg?branch=master
+[![Build Status](https://travis-ci.org/cmaughan/mgfx.svg?branch=master)](https://travis-ci.org/cmaughan/mgfx)
 
 An example of cross-platform 2D (CPU & GPU) and 3D (GPU) rendering.
 A quick, simple starter kit for getting something on the screen, on any platform.
