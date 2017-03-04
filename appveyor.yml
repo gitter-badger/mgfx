@@ -34,8 +34,14 @@ install:
 
 build_script:
   # generate build script
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - dir
+  # create folder for an out-of-source-tree build: "c:\projects\build"
+  - cd.. 
+  - mkdir build
+  - cd build
   - >
-    cmake %APPVEYOR_BUILD_FOLDER%\src
+    cmake %APPVEYOR_BUILD_FOLDER%
     -G "%generator%" 
     -DCMAKE_INSTALL_PREFIX=./mgfx
   # build
