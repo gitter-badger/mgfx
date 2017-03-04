@@ -55,13 +55,7 @@ build_script:
 after_build:
   # set compiler var
   - if "%generator%"=="Visual Studio 14" (set COMPILER="VC14")
-  # copy required system libraries from \bin folder into \Tutorials1 folder
-  - rd /s /q C:\projects\build\mgfx\bin
   # switch to project build folder and zip "tutorials" folder
-  - cd C:\projects\build
+  - cd C:\projects\build\Release
   - 7z a -tzip -mx9 "mgfx-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip" mgfx 
-  # switch to project directory and zip append the "assets" folder
-  - cd %APPVEYOR_BUILD_FOLDER%
-  # finally, push the tutorials artifact
-  - cd C:\projects\build
   - appveyor PushArtifact "mgfx-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip"
