@@ -2,8 +2,9 @@ language: cpp
 sudo: required
 dist: trusty
 compiler:
-    - gcc
+  - gcc
 before_install:
+  # TODO: Can thse be in addons without sudo for faster builds?
   - sudo apt-get -qq update
   - sudo apt-get install -y freeglut3-dev
 install:
@@ -12,11 +13,19 @@ install:
   - tar -xzvf SDL2-2.0.5.tar.gz
   - (cd SDL2-2.0.5 && ./configure && make && sudo make install)
 script:
+  - ln -s /usr/bin/gcc-6 /usr/local/bin/gcc
+  - ln -s /usr/bin/g++-6 /usr/local/bin/g++
+  - export CC=/usr/bin/gcc-6
+  - export CXX=/usr/bin/g++-6
+  - gcc -v && g++ -v && cmake --version
   - "./config.sh"
   - cd build
   - make
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
       - cmake
-      - g++-4.8
+      - g++-6
+      - gcc-6
